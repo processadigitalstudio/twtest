@@ -34,6 +34,26 @@ export const ROUTE_BY_LEVEL = {
   }
 };
 
+// Instituciones distintas de EAM: el examen se llama "suficiencia" (no "certificación") y no se muestran fechas fijas.
+export const isEam = (slug) => slug === "eam";
+const DATES_NOTE = "Tenemos fechas todos los meses. Inscríbete para saberlas.";
+export const ROUTE_STEPS_SUF = ROUTE_STEPS.map(st => st.id === "certificacion" ? { ...st, name: "Suficiencia" } : st);
+export const ROUTE_BY_LEVEL_SUF = {
+  B2: { ...ROUTE_BY_LEVEL.B2,
+    headline: "Tu nivel ya está listo para la suficiencia",
+    text: "Lo recomendado es ir directo al examen de suficiencia, que valida el nivel que obtuviste." },
+  B1: { ...ROUTE_BY_LEVEL.B1,
+    headline: "Estás muy cerca de tu suficiencia",
+    text: "Puedes presentar el examen de suficiencia, o prepararte antes con el curso preparatorio para llegar más seguro." },
+  A2: { ...ROUTE_BY_LEVEL.A2,
+    text: "Lo recomendado es el curso intensivo, empezando en el curso A2 (resaltado abajo). Después podrás prepararte y presentar la suficiencia." },
+  A1: { ...ROUTE_BY_LEVEL.A1,
+    text: "Lo recomendado es el curso intensivo, empezando en el curso A1 (resaltado abajo). Después podrás prepararte y presentar la suficiencia." }
+};
+export function routeCopy(slug) {
+  return isEam(slug) ? { steps: ROUTE_STEPS, byLevel: ROUTE_BY_LEVEL } : { steps: ROUTE_STEPS_SUF, byLevel: ROUTE_BY_LEVEL_SUF };
+}
+
 // Curso intensivo donde EMPIEZA según el nivel en que lo ubica el examen (punto de partida: aún le falta lograr ese nivel).
 export const START_COURSE = { A1: "A1", A2: "A2", B1: "B1.1", B2: "B2" };
 
@@ -59,7 +79,8 @@ export const INTENSIVE_PRICES = [
 
 export function routeCards(level, institutionSlug) {
   const certDates = CERT_DATES[institutionSlug] || CERT_DATES.general;
-  return {
+  const eam = isEam(institutionSlug);
+  const cards = {
     certificacion: {
       step: "Directo a certificarte",
       title: "Examen de certificación",
@@ -106,4 +127,16 @@ export function routeCards(level, institutionSlug) {
       payNote: `Pregunta por las facilidades de pago y créditos: ${CONTACT_EMAIL}`
     }
   };
+  if (!eam) {
+    // Resto de instituciones: "suficiencia" y sin fechas fijas (las fechas son mensuales; se conocen al inscribirse).
+    cards.certificacion = { ...cards.certificacion,
+      step: "Directo a tu suficiencia",
+      title: "Examen de suficiencia",
+      what: "Prueba estandarizada con sello de acreditación internacional. Valida el nivel que obtuviste.",
+      dates: undefined, datesNote: DATES_NOTE };
+    cards.preparacion = { ...cards.preparacion, dates: undefined, datesNote: DATES_NOTE };
+    cards.formacion = { ...cards.formacion,
+      what: "Cursos por niveles (A1, A2, B1.1, B1.2 y B2) para fortalecer tu inglés antes de prepararte y presentar la suficiencia." };
+  }
+  return cards;
 }

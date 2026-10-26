@@ -30,7 +30,7 @@
 import { watchResult } from "./js/exam-engine.js";
 import { CANDO } from "./js/cando.js";
 import { resolveInstitution, renderBrand, currentInstitutionSlug } from "./js/institutions.js";
-import { ROUTE_STEPS, ROUTE_BY_LEVEL, routeCards } from "./js/routes.js";
+import { routeCopy, routeCards } from "./js/routes.js";
 
 const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -78,7 +78,9 @@ function routeCardHtml(key, card, recommended) {
     <ul>${li(card.facts)}</ul>
     ${card.startNote ? `<p class="route-start"><b>${esc(card.startNote)}</b></p>` : ""}
     <div class="route-sub">${esc(card.priceTitle || "Valor")}</div>${prices}
-    <div class="route-sub">Fechas</div>${card.dateGroups
+    <div class="route-sub">Fechas</div>${card.datesNote
+      ? `<p class="route-datesnote"><b>${esc(card.datesNote)}</b></p>`
+      : card.dateGroups
       ? card.dateGroups.map(g => `<div class="route-grp">${esc(g.title)}</div><dl class="route-dl">${dl(g.rows)}</dl>`).join("")
       : `<dl class="route-dl">${dl(card.dates)}</dl>`}
     ${card.payNote ? `<div class="route-pay">💳 ${esc(card.payNote)}</div>` : ""}
@@ -86,9 +88,10 @@ function routeCardHtml(key, card, recommended) {
 }
 
 function routeSection(level, instSlug) {
-  const plan = ROUTE_BY_LEVEL[level] || ROUTE_BY_LEVEL.A1;
+  const copy = routeCopy(instSlug);
+  const plan = copy.byLevel[level] || copy.byLevel.A1;
   const cards = routeCards(level, instSlug);
-  const chips = ROUTE_STEPS.map((st, i) => `<div class="route-chip ${[].concat(plan.entry).includes(st.id) ? "here" : ""}"><span>${i + 1}</span><b>${esc(st.name)}</b><small>${esc(st.sub)}</small></div>`).join('<i class="route-arrow">›</i>');
+  const chips = copy.steps.map((st, i) => `<div class="route-chip ${[].concat(plan.entry).includes(st.id) ? "here" : ""}"><span>${i + 1}</span><b>${esc(st.name)}</b><small>${esc(st.sub)}</small></div>`).join('<i class="route-arrow">›</i>');
   const rec = plan.recommended.map(k => routeCardHtml(k, cards[k], true)).join("");
   const others = plan.others.map(k => routeCardHtml(k, cards[k], false)).join("");
   return `<div class="route-box">
