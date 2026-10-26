@@ -90,7 +90,7 @@ export function renderBrand(container, inst) {
   add(TWEETALIG.logo, "Tweetalig", "brand-main");
   if (inst && inst.slug !== "tweetalig") {
     const sep = document.createElement("span");
-    sep.className = "brand-sep"; sep.textContent = "×";
+    sep.className = "brand-sep"; sep.textContent = "&";
     container.appendChild(sep);
     add(inst.logo, inst.name, "brand-partner");
   }
