@@ -176,6 +176,16 @@ export const tsMs = (v) => (v && typeof v.toMillis === "function") ? v.toMillis(
 
 const fmtDate = (ms) => new Date(ms).toLocaleString("es-CO", { weekday: "long", day: "numeric", month: "long", hour: "numeric", minute: "2-digit" });
 
+// Institución de la sesión a la que pertenece esta contraseña (para mostrar el logo correcto antes de entrar). null si no existe.
+export async function peekGroupInstitution(password) {
+  const pw = String(password || "").trim();
+  if (pw.length < 6) return null;
+  try {
+    const snap = await getDoc(doc(db, "exam_groups", await groupIdFromPassword(pw)));
+    return snap.exists() ? (snap.data().institution || "tweetalig") : null;
+  } catch (e) { return null; }
+}
+
 export async function loginToGroup({ cedula, password }) {
   const ced = normalizeCedula(cedula);
   if (ced.length < 5) return { ok: false, reason: "Escribe tu username." };

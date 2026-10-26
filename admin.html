@@ -429,8 +429,9 @@ function renderDetail() {
     <div class="form-grid">
       <div><label>Abre</label><input type="datetime-local" id="dOpens" value="${toLocalInput(tsMs(g.opensAt))}"></div>
       <div><label>Cierra</label><input type="datetime-local" id="dCloses" value="${toLocalInput(tsMs(g.closesAt))}"></div>
+      <div><label>Institución (logo que ven los estudiantes)</label><select id="dInst">${Object.keys(INSTITUTIONS).map(k => `<option value="${k}" ${k === (g.institution || "tweetalig") ? "selected" : ""}>${esc(INSTITUTIONS[k].name)}</option>`).join("")}</select></div>
     </div>
-    <button class="btn-primary" id="dSave" style="width:auto;">Guardar horario</button>
+    <button class="btn-primary" id="dSave" style="width:auto;">Guardar horario e institución</button>
     <button class="btn-secondary" id="dPause" style="margin-left:8px;">${g.enabled === false ? "▶ Reanudar sesión" : "⏸ Pausar sesión"}</button>
     <button class="btn-secondary" id="dDelete" style="margin-left:8px; color:var(--bad);">🗑 Borrar sesión</button>
     <div class="error-msg" id="dMsg"></div>
@@ -462,7 +463,12 @@ function renderDetail() {
   document.getElementById("dSave").onclick = async () => {
     const o = new Date(document.getElementById("dOpens").value).getTime(), c = new Date(document.getElementById("dCloses").value).getTime();
     if (!(o < c)) { msg("La hora de cierre debe ser posterior a la de apertura."); return; }
-    await updateDoc(doc(db, "exam_groups", g.id), { opensAt: Timestamp.fromMillis(o), closesAt: Timestamp.fromMillis(c) });
+    const newInst = document.getElementById("dInst").value;
+    await updateDoc(doc(db, "exam_groups", g.id), { opensAt: Timestamp.fromMillis(o), closesAt: Timestamp.fromMillis(c), institution: newInst });
+    if (newInst !== (g.institution || "tweetalig")) {      // el cambio también llega a los estudiantes y a los intentos de esta sesión
+      for (const p of partsCache.filter(x => x.groupId === g.id)) { try { await updateDoc(doc(db, "participants", p.id), { institution: newInst }); } catch (e) { console.warn(e); } }
+      for (const x of latestSessions.filter(x => x.groupId === g.id)) { try { await updateDoc(doc(db, "sessions", x.id), { institution: newInst }); } catch (e) { console.warn(e); } }
+    }
     msg(""); await loadGroups();
   };
   document.getElementById("dPause").onclick = async () => { await updateDoc(doc(db, "exam_groups", g.id), { enabled: g.enabled === false }); await loadGroups(); };
@@ -645,7 +651,8 @@ const newParticipant = (g, r) => ({ cedula: r.cedula, name: r.name, nombres: r.n
 
 const grpInst = document.getElementById("grpInstitution");
 for (const slug of Object.keys(INSTITUTIONS)) { const o = document.createElement("option"); o.value = slug; o.textContent = INSTITUTIONS[slug].name; grpInst.appendChild(o); }
-grpInst.value = "eam";
+{ const o = document.createElement("option"); o.value = ""; o.textContent = "— elige la institución —"; grpInst.insertBefore(o, grpInst.firstChild); }
+grpInst.value = "";                        // sin valor por defecto: así nunca sale el logo equivocado por olvido
 
 document.getElementById("createGroupBtn").addEventListener("click", async () => {
   const msg = document.getElementById("grpMsg");
@@ -655,6 +662,7 @@ document.getElementById("createGroupBtn").addEventListener("click", async () => 
   const o = new Date(document.getElementById("grpOpens").value).getTime(), c = new Date(document.getElementById("grpCloses").value).getTime();
   const { rows, bad } = parseRoster(document.getElementById("grpRoster").value);
   if (!name) { msg.textContent = "Escribe el nombre de la sesión."; return; }
+  if (!grpInst.value) { msg.textContent = "Elige la institución de la sesión (de ella depende el logo que ven los estudiantes)."; return; }
   if (password.length < 6 || /\s/.test(password)) { msg.textContent = "La contraseña debe tener al menos 6 caracteres y no puede tener espacios."; return; }
   if (!(o < c)) { msg.textContent = "Indica la fecha y hora de apertura y de cierre (el cierre debe ser después de la apertura)."; return; }
   if (!rows.length) { msg.textContent = "Pega al menos un estudiante (cédula, nombre)."; return; }

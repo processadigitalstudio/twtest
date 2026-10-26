@@ -47,12 +47,24 @@
 </div>
 
 <script type="module">
-  import { loginToGroup } from "./js/exam-engine.js";
+  import { loginToGroup, peekGroupInstitution } from "./js/exam-engine.js";
   import { resolveInstitution, renderBrand, slugFromLocation } from "./js/institutions.js";
 
   const params = new URLSearchParams(location.search);
   const urlSlug = slugFromLocation();
-  renderBrand(document.getElementById("brandBar"), resolveInstitution(urlSlug));
+  // Logo: solo Tweetalig hasta saber a qué sesión pertenece la contraseña; entonces aparece el de SU institución.
+  // (Así una sesión de otra institución nunca muestra el logo de EAM por haber entrado por el link /eam.)
+  const brandBar = document.getElementById("brandBar");
+  renderBrand(brandBar, resolveInstitution("tweetalig"));
+  let brandFor = "";
+  async function updateBrand() {
+    const pw = (document.getElementById("passInput").value || "").trim();
+    if (pw === brandFor) return;
+    brandFor = pw;
+    const slug = await peekGroupInstitution(pw);
+    if (brandFor !== pw) return;
+    renderBrand(brandBar, resolveInstitution(slug || "tweetalig"));
+  }
 
   const btn = document.getElementById("startBtn");
   const cedulaInput = document.getElementById("cedulaInput");
@@ -76,7 +88,7 @@
       sessionStorage.setItem("participantName", r.name);
       sessionStorage.setItem("groupId", r.groupId);
       sessionStorage.setItem("groupName", r.groupName);
-      sessionStorage.setItem("institution", r.institution || urlSlug || "tweetalig");
+      sessionStorage.setItem("institution", r.institution || "tweetalig");
       sessionStorage.setItem("profile", JSON.stringify(r.profile || {}));
       if (r.resume) sessionStorage.setItem("resume", JSON.stringify(r.resume)); else sessionStorage.removeItem("resume");
       window.location.href = "exam.html";
@@ -95,6 +107,8 @@
     document.getElementById("eyeOff").classList.toggle("hidden", !show);
   });
 
+  passInput.addEventListener("change", updateBrand);
+  passInput.addEventListener("blur", updateBrand);
   btn.addEventListener("click", attemptLogin);
   passInput.addEventListener("keydown", (e) => { if (e.key === "Enter") attemptLogin(); });
   cedulaInput.addEventListener("keydown", (e) => { if (e.key === "Enter") passInput.focus(); });
