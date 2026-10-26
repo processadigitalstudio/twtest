@@ -529,11 +529,11 @@ textarea.access-input {
 .brand-wordmark { font-family: "Newsreader", Georgia, serif; font-weight: 700; font-size: 26px; color: var(--ink); letter-spacing: -0.01em; }
 .brand-main .brand-wordmark { color: var(--ink); border-bottom: 4px solid var(--teal); padding-bottom: 2px; }
 .brand-partner .brand-wordmark { color: var(--ink-soft); }
-.brand-sep { color: var(--line); font-size: 24px; font-weight: 300; }
+.brand-sep { color: var(--ink-soft); font-size: 24px; font-weight: 400; }
 .topbar .brand-bar { margin: 0; gap: 12px; }
 .topbar .brand-logo img { height: 38px; width: auto; background: #fff; border-radius: 6px; padding: 3px 8px; }
 .topbar .brand-wordmark { color: #fff; font-size: 20px; border: none; }
-.topbar .brand-sep { color: rgba(255,255,255,0.5); }
+.topbar .brand-sep { color: rgba(255,255,255,0.8); }
 
 .page-center.top { align-items: flex-start; padding-top: 40px; }
 .card.landing { max-width: 880px; padding: 40px 44px; }
