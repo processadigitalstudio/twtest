@@ -133,6 +133,7 @@ export function routeCards(level, institutionSlug) {
       step: "Directo a tu suficiencia",
       title: "Examen de suficiencia",
       what: "Prueba estandarizada con sello de acreditación internacional. Valida el nivel que obtuviste.",
+      facts: ["3 habilidades: Listening, Reading y Language Use", "Duración: 2 horas", "Modalidad presencial"],
       dates: undefined, datesNote: DATES_NOTE };
     cards.preparacion = { ...cards.preparacion, dates: undefined, datesNote: DATES_NOTE };
     cards.formacion = { ...cards.formacion,
