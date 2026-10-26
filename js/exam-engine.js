@@ -219,7 +219,7 @@ export async function loginToGroup({ cedula, password }) {
   }
   return {
     ok: true, participantId: pid, cedula: ced, name: part.name || "",
-    profile: { nombres: part.nombres || "", apellidos: part.apellidos || "", email: part.email || "", nivel: part.nivel || "" },
+    profile: { nombres: part.nombres || "", apellidos: part.apellidos || "", email: part.email || "", telefono: part.telefono || "", nivel: part.nivel || "" },
     resume: rs,
     groupId, groupName: group.name || "", institution: group.institution || ""
   };

@@ -1175,7 +1175,7 @@ async function renderItemAnalysis() {
 
 document.getElementById("exportStudentsBtn").addEventListener("click", () => {
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const header = ["cedula", "nombres", "apellidos", "correo", "nivel_requerido_grado", "sesion", "estado", "nivel_obtenido", "cumple_nivel_requerido", "nota_final",
+  const header = ["cedula", "nombres", "apellidos", "correo", "telefono", "nivel_requerido_grado", "sesion", "estado", "nivel_obtenido", "cumple_nivel_requerido", "nota_final",
     "language_use_pct", "reading_comprehension_pct", "listening_comprehension_pct", "eventos_sospechosos", "reaperturas"];
   const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
   // Se arma desde los INTENTOS (sessions) + los participantes que aún no han iniciado. Así el archivo nunca sale vacío
@@ -1206,7 +1206,7 @@ document.getElementById("exportStudentsBtn").addEventListener("click", () => {
     const meets = r && req ? (order[r.level] >= order[req] ? "SI" : "NO") : "";
     const st = sess ? (sess.status === "completed" ? "completed" : p.status === "closed" || sess.status === "closed" ? "closed" : sess.status) : p.status;
     const status = { not_started: "sin iniciar", in_progress: "en proceso", closed: "cerrado por interrupcion", completed: "finalizado" }[st] || st;
-    lines.push([p.cedula, prof.nombres || p.nombres, prof.apellidos || p.apellidos, prof.email || p.email, req, p.groupName || sess?.groupName, status, r?.level, meets, r?.finalScore,
+    lines.push([p.cedula, prof.nombres || p.nombres, prof.apellidos || p.apellidos, prof.email || p.email, prof.telefono || p.telefono, req, p.groupName || sess?.groupName, status, r?.level, meets, r?.finalScore,
       r?.pct?.UoL, r?.pct?.Reading, r?.pct?.Listening, (sess?.suspiciousEvents || []).length, sess?.reopenCount || 0].map(q).join(","));
   }
   if (lines.length === 1) { alert("No hay estudiantes ni intentos para exportar todavía. Espera unos segundos a que cargue el panel y vuelve a intentar."); return; }
