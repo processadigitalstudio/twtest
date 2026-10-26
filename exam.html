@@ -477,22 +477,22 @@ let activePlan = () => (state ? state.plan : pendingPlan);
 const TC = {
   en: {
     eyebrow: "Step 1 of 2", title: "Confirm your details",
-    intro: "Check that your information is correct. You can fix your names and email; your ID comes from the list your supervisor loaded.",
-    nombres: "First name(s)", apellidos: "Last name(s)", id: "ID number (cédula)", email: "Email",
+    intro: "Check that your information is correct. You can fix your names, email and phone; your ID comes from the list your supervisor loaded.",
+    nombres: "First name(s)", apellidos: "Last name(s)", id: "ID number (cédula)", email: "Email", telefono: "Phone / mobile number",
     nivel: "Level you need for graduation", nivelHelp: "Choose the English level your program requires you to reach.",
     ok: "The information above is correct.", next: "Continue →",
-    eNombres: "Write your first name(s).", eApellidos: "Write your last name(s).", eEmail: "Write a valid email address.", eNivel: "Choose the level you need for graduation.", eOk: "Please confirm that your information is correct."
+    eNombres: "Write your first name(s).", eApellidos: "Write your last name(s).", eEmail: "Write a valid email address.", eTel: "Write a valid phone number (digits only, 7 to 15).", eNivel: "Choose the level you need for graduation.", eOk: "Please confirm that your information is correct."
   },
   es: {
     eyebrow: "Paso 1 de 2", title: "Confirma tus datos",
-    intro: "Revisa que tu información sea correcta. Puedes corregir tus nombres y tu correo; tu cédula viene de la lista que cargó el supervisor.",
-    nombres: "Nombres", apellidos: "Apellidos", id: "Número de cédula", email: "Correo electrónico",
+    intro: "Revisa que tu información sea correcta. Puedes corregir tus nombres, tu correo y tu teléfono; tu cédula viene de la lista que cargó el supervisor.",
+    nombres: "Nombres", apellidos: "Apellidos", id: "Número de cédula", email: "Correo electrónico", telefono: "Teléfono / celular",
     nivel: "Nivel que necesitas para grado", nivelHelp: "Elige el nivel de inglés que tu programa exige para graduarte.",
     ok: "Los datos anteriores son correctos.", next: "Continuar →",
-    eNombres: "Escribe tus nombres.", eApellidos: "Escribe tus apellidos.", eEmail: "Escribe un correo válido.", eNivel: "Elige el nivel que necesitas para grado.", eOk: "Confirma que tus datos son correctos."
+    eNombres: "Escribe tus nombres.", eApellidos: "Escribe tus apellidos.", eEmail: "Escribe un correo válido.", eTel: "Escribe un teléfono válido (solo números, de 7 a 15 dígitos).", eNivel: "Elige el nivel que necesitas para grado.", eOk: "Confirma que tus datos son correctos."
   }
 };
-const confirmDraft = { nombres: null, apellidos: null, email: null, nivel: null };
+const confirmDraft = { nombres: null, apellidos: null, email: null, telefono: null, nivel: null };
 function renderConfirm() {
   const t = TC[uiLang];
   const pf = ctx.profile || {};
@@ -509,6 +509,7 @@ function renderConfirm() {
       <div><label for="cfApellidos">${t.apellidos}</label><input type="text" class="plain" id="cfApellidos" autocomplete="off" value="${escapeHtml(val("apellidos"))}"></div>
       <div><label for="cfId">${t.id}</label><input type="text" id="cfId" readonly value="${escapeHtml(ctx.cedula)}"></div>
       <div><label for="cfEmail">${t.email}</label><input type="text" class="plain" id="cfEmail" inputmode="email" autocomplete="off" autocapitalize="off" spellcheck="false" value="${escapeHtml(val("email"))}"></div>
+      <div><label for="cfTel">${t.telefono}</label><input type="text" class="plain" id="cfTel" inputmode="tel" autocomplete="off" spellcheck="false" value="${escapeHtml(val("telefono"))}"></div>
     </div>
     <label style="margin-top:20px;">${t.nivel}</label>
     <div class="level-choice">
@@ -523,6 +524,7 @@ function renderConfirm() {
     confirmDraft.nombres = document.getElementById("cfNombres").value;
     confirmDraft.apellidos = document.getElementById("cfApellidos").value;
     confirmDraft.email = document.getElementById("cfEmail").value;
+    confirmDraft.telefono = document.getElementById("cfTel").value;
     const r = document.querySelector('input[name="cfNivel"]:checked'); confirmDraft.nivel = r ? r.value : "";
   };
   document.querySelectorAll('input[name="cfNivel"]').forEach(r => r.addEventListener("change", () => {
@@ -537,9 +539,12 @@ function renderConfirm() {
     if (nombres.length < 2) { err.textContent = t.eNombres; return; }
     if (apellidos.length < 2) { err.textContent = t.eApellidos; return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = t.eEmail; return; }
+    const telefono = confirmDraft.telefono.trim().replace(/\s+/g, " ");
+    const telDigits = telefono.replace(/\D/g, "");
+    if (!/^[\d\s+()\-.]+$/.test(telefono) || telDigits.length < 7 || telDigits.length > 15) { err.textContent = t.eTel; return; }
     if (!["B1", "B2"].includes(confirmDraft.nivel)) { err.textContent = t.eNivel; return; }
     if (!document.getElementById("cfOk").checked) { err.textContent = t.eOk; return; }
-    ctx.profile = { nombres, apellidos, email, nivel: confirmDraft.nivel };
+    ctx.profile = { nombres, apellidos, email, telefono, nivel: confirmDraft.nivel };
     ctx.name = `${nombres} ${apellidos}`;
     try { sessionStorage.setItem("profile", JSON.stringify(ctx.profile)); } catch (e) {}
     participantName = ctx.name;
