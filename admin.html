@@ -467,7 +467,10 @@ function renderDetail() {
     await updateDoc(doc(db, "exam_groups", g.id), { opensAt: Timestamp.fromMillis(o), closesAt: Timestamp.fromMillis(c), institution: newInst });
     if (newInst !== (g.institution || "tweetalig")) {      // el cambio también llega a los estudiantes y a los intentos de esta sesión
       for (const p of partsCache.filter(x => x.groupId === g.id)) { try { await updateDoc(doc(db, "participants", p.id), { institution: newInst }); } catch (e) { console.warn(e); } }
-      for (const x of latestSessions.filter(x => x.groupId === g.id)) { try { await updateDoc(doc(db, "sessions", x.id), { institution: newInst }); } catch (e) { console.warn(e); } }
+      for (const x of latestSessions.filter(x => x.groupId === g.id)) {
+        try { await updateDoc(doc(db, "sessions", x.id), { institution: newInst }); } catch (e) { console.warn(e); }
+        if (x.resultDelivery?.status === "published") { try { await updateDoc(doc(db, "results", x.id), { institution: newInst }); } catch (e) { console.warn(e); } }   // el resultado ya publicado también cambia de logo/texto
+      }
     }
     msg(""); await loadGroups();
   };
