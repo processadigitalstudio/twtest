@@ -3,6 +3,8 @@
 // Aquí están TODAS las fechas, precios y textos. Para cambiarlos edita solo este archivo.
 // ============================================================
 
+import { infoEmailFor, DEFAULT_INFO_EMAIL } from "./institutions.js";
+
 export const ROUTE_STEPS = [
   { id: "formacion", name: "Formación previa", sub: "Curso intensivo" },
   { id: "preparacion", name: "Preparación", sub: "Curso preparatorio" },
@@ -71,7 +73,7 @@ const CERT_DATES = {
 };
 
 // Correo para dudas y facilidades de pago
-export const CONTACT_EMAIL = "info.eam@tweetalig.edu.co";
+export const CONTACT_EMAIL = DEFAULT_INFO_EMAIL;   // por institución: infoEmailFor(slug)
 
 export const INTENSIVE_PRICES = [
   ["A1", "$958.725"], ["A2", "$958.725"], ["B1.1", "$861.600"], ["B1.2", "$1.045.125"], ["B2", "$1.045.125"]
@@ -124,7 +126,7 @@ export function routeCards(level, institutionSlug) {
           ["Fin de clases y exámenes finales", "hasta el 5 de febrero de 2027"]
         ] }
       ],
-      payNote: `Pregunta por las facilidades de pago y créditos: ${CONTACT_EMAIL}`
+      payNote: `Pregunta por las facilidades de pago y créditos: ${infoEmailFor(institutionSlug)}`
     }
   };
   if (!eam) {

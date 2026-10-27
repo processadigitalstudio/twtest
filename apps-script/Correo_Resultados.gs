@@ -15,7 +15,14 @@
  */
 var FROM_NAME = 'Centro de Idiomas Tweetalig';
 var LOGO_URL = 'https://tweetaligtest.web.app/img/brand/tweetalig-logo.png';
-var REPLY_TO = 'info.eam@tweetalig.edu.co';
+var REPLY_TO = 'info.eam@tweetalig.edu.co';     // por defecto (EAM y cualquier institución que no esté en la tabla)
+// Correo de información según la institución de la sesión (el panel envía m.institution). Misma tabla que js/institutions.js.
+var INFO_EMAILS = {
+  eam: 'info.eam@tweetalig.edu.co',
+  unitecnar: 'unitecnar@tweetalig.edu.co',
+  uniajs: 'info.sincelejo@tweetalig.edu.co'
+};
+function infoEmail_(inst) { return INFO_EMAILS[String(inst || '').toLowerCase()] || REPLY_TO; }
 var ALLOWED_LINK_PREFIX = 'https://tweetaligtest.web.app/';
 var MAX_PER_CALL = 40;
 
@@ -78,6 +85,7 @@ function sendOne_(m) {
       return '<tr><td style="padding:6px 0;font-size:14px;color:#2C3D4D;">' + r[0] + '</td><td style="padding:6px 0;font-size:14px;color:#2C3D4D;text-align:right;"><b>' + v + '%</b></td></tr>';
     }).join('');
   var first = String(m.name || '').split(' ')[0];
+  var info = infoEmail_(m.institution);
   var html =
     '<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#2C3D4D;">' +
     '<div style="background:#2C3D4D;padding:16px 22px;border-radius:12px 12px 0 0;border-bottom:4px solid #5DB69C;">' +
@@ -96,13 +104,13 @@ function sendOne_(m) {
     '<table style="width:100%;border-collapse:collapse;border-top:1px solid #DAD6CC;margin:0 0 20px;">' + skills + '</table>' +
     '<p style="font-size:15px;line-height:1.5;margin:0 0 16px;">En el siguiente enlace puedes ver tu resultado completo y <b>tu ruta recomendada</b> (cursos, fechas e inscripción):</p>' +
     '<p style="margin:0 0 20px;"><a href="' + esc_(m.link) + '" style="background:#2C3D4D;color:#fff;text-decoration:none;padding:12px 22px;border-radius:10px;font-weight:bold;display:inline-block;">Ver mi resultado y mi ruta</a></p>' +
-    '<p style="font-size:12.5px;color:#52616F;line-height:1.5;margin:0;">Resultado válido para el periodo académico 2026-2. ¿Dudas? Escríbenos a ' + REPLY_TO + '.</p>' +
+    '<p style="font-size:12.5px;color:#52616F;line-height:1.5;margin:0;">Resultado válido para el periodo académico 2026-2. ¿Dudas? Escríbenos a ' + info + '.</p>' +
     '</div></div>';
   var text = 'Hola, ' + first + ':\n\nTu resultado te ubica en el nivel ' + m.level + ' de inglés' + ' (puntaje final ' + Math.round(Number(m.score) || 0) + '/100).\n' +
-    'Mira tu resultado completo y tu ruta recomendada aquí: ' + m.link + '\n\nResultado válido para el periodo académico 2026-2.\nCentro de Idiomas Tweetalig — ' + REPLY_TO;
+    'Mira tu resultado completo y tu ruta recomendada aquí: ' + m.link + '\n\nResultado válido para el periodo académico 2026-2.\nCentro de Idiomas Tweetalig — ' + info;
   MailApp.sendEmail({
     to: m.to,
     subject: 'Tu resultado del examen de ubicación de inglés — Centro de Idiomas Tweetalig',
-    body: text, htmlBody: html, name: FROM_NAME, replyTo: REPLY_TO
+    body: text, htmlBody: html, name: FROM_NAME, replyTo: info
   });
 }
