@@ -1176,9 +1176,22 @@ async function renderItemAnalysis() {
   });
 }
 
+// Nombre de la institución de una sesión/participante (si no la tiene guardada, se toma de su sesión de examen/grupo)
+function instNameOf(...objs) {
+  let slug = "";
+  for (const o of objs) { if (o && o.institution) { slug = o.institution; break; } }
+  if (!slug) {
+    for (const o of objs) {
+      const g = o && groupsCache.find(x => x.id === o.groupId || (o.groupName && x.name === o.groupName));
+      if (g && g.institution) { slug = g.institution; break; }
+    }
+  }
+  return slug ? ((INSTITUTIONS[slug] || {}).name || slug) : "";
+}
+
 document.getElementById("exportStudentsBtn").addEventListener("click", () => {
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const header = ["cedula", "nombres", "apellidos", "correo", "telefono", "nivel_requerido_grado", "sesion", "estado", "nivel_obtenido", "cumple_nivel_requerido", "nota_final",
+  const header = ["cedula", "nombres", "apellidos", "correo", "telefono", "nivel_requerido_grado", "sesion", "institucion", "estado", "nivel_obtenido", "cumple_nivel_requerido", "nota_final",
     "language_use_pct", "reading_comprehension_pct", "listening_comprehension_pct", "eventos_sospechosos", "reaperturas"];
   const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
   // Se arma desde los INTENTOS (sessions) + los participantes que aún no han iniciado. Así el archivo nunca sale vacío
@@ -1209,7 +1222,7 @@ document.getElementById("exportStudentsBtn").addEventListener("click", () => {
     const meets = r && req ? (order[r.level] >= order[req] ? "SI" : "NO") : "";
     const st = sess ? (sess.status === "completed" ? "completed" : p.status === "closed" || sess.status === "closed" ? "closed" : sess.status) : p.status;
     const status = { not_started: "sin iniciar", in_progress: "en proceso", closed: "cerrado por interrupcion", completed: "finalizado" }[st] || st;
-    lines.push([p.cedula, prof.nombres || p.nombres, prof.apellidos || p.apellidos, prof.email || p.email, prof.telefono || p.telefono, req, p.groupName || sess?.groupName, status, r?.level, meets, r?.finalScore,
+    lines.push([p.cedula, prof.nombres || p.nombres, prof.apellidos || p.apellidos, prof.email || p.email, prof.telefono || p.telefono, req, p.groupName || sess?.groupName, instNameOf(sess, p), status, r?.level, meets, r?.finalScore,
       r?.pct?.UoL, r?.pct?.Reading, r?.pct?.Listening, (sess?.suspiciousEvents || []).length, sess?.reopenCount || 0].map(q).join(","));
   }
   if (lines.length === 1) { alert("No hay estudiantes ni intentos para exportar todavía. Espera unos segundos a que cargue el panel y vuelve a intentar."); return; }
@@ -1219,7 +1232,7 @@ document.getElementById("exportStudentsBtn").addEventListener("click", () => {
 });
 
 document.getElementById("exportCsvBtn").addEventListener("click", () => {
-  const lines = ["session_id,username,name,item_id,skill,level,category,selected,correct,time_ms,final_score,level_assigned,suspicious_events_count,time_uol_sec,time_reading_sec,time_listening_sec,uol_timed_out,reading_timed_out,listening_timed_out,pattern_alerts_count,uol_A1,uol_A2,uol_B1,uol_B2,reading_A1,reading_A2,reading_B1,reading_B2,listening_A1,listening_A2,listening_B1,listening_B2,sesion,nivel_requerido,inicio,correct_option,is_test_account"];
+  const lines = ["session_id,username,name,item_id,skill,level,category,selected,correct,time_ms,final_score,level_assigned,suspicious_events_count,time_uol_sec,time_reading_sec,time_listening_sec,uol_timed_out,reading_timed_out,listening_timed_out,pattern_alerts_count,uol_A1,uol_A2,uol_B1,uol_B2,reading_A1,reading_A2,reading_B1,reading_B2,listening_A1,listening_A2,listening_B1,listening_B2,sesion,nivel_requerido,inicio,correct_option,is_test_account,institucion"];
   const L = (i) => (Number.isInteger(i) && i >= 0 && i < 26) ? String.fromCharCode(65 + i) : "";
   const qq = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
   // Sesiones terminadas: las cargadas al abrir el panel + las que llegaron en vivo después (antes quedaban fuera del CSV)
@@ -1247,7 +1260,7 @@ document.getElementById("exportCsvBtn").addEventListener("click", () => {
         qq(s.id), qq(s.username), qq(s.name), itemId, info.skill, info.level, info.category,
         L(resp?.selected), info.correct ? 1 : 0, info.timeMs ?? "", r.finalScore, r.level, eventCount, ...timingCols,
         r.patternAlerts.length, ...breakdownCols,
-        qq(s.groupName), qq(s.profile?.nivel), startedIso, L(answerKey?.[itemId]?.correct), isTest
+        qq(s.groupName), qq(s.profile?.nivel), startedIso, L(answerKey?.[itemId]?.correct), isTest, qq(instNameOf(s))
       ].join(","));
     }
   }
