@@ -746,11 +746,16 @@ document.getElementById("boardAddBtn").addEventListener("click", () => {
 // ---------------- ENVÍO DE RESULTADOS POR CORREO ----------------
 const RESULTS_BASE = "https://tweetaligtest.web.app/";
 const emailOf = (s, p) => ((s?.profile?.email || p?.email || "").trim());
+// La institución del correo sale de la SESIÓN de examen (lo que se ve en "Sesiones y estudiantes"); si no se encuentra, del intento o del estudiante.
+function mailInstitution(s, p) {
+  const g = groupsCache.find(x => x.id === (s?.groupId || p?.groupId));
+  return (g && g.institution) || s?.institution || p?.institution || "";
+}
 function mailMessage(s, p, force = false) {
   const r = computeSessionResults(s, answerKey);
   return { id: s.id, to: emailOf(s, p), name: s.name || p?.name || "", level: r.level, score: r.finalScore,
     pct: { UoL: r.pct.UoL, Reading: r.pct.Reading, Listening: r.pct.Listening },
-    link: `${RESULTS_BASE}results.html?s=${encodeURIComponent(s.id)}`, institution: s.institution || "", force };
+    link: `${RESULTS_BASE}results.html?s=${encodeURIComponent(s.id)}`, institution: mailInstitution(s, p), force };
 }
 // Listos para enviar: terminaron, resultado publicado, correo válido y aún no enviado.
 function eligibleMails(parts, byPart) {
