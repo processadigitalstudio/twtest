@@ -137,6 +137,7 @@
       <button class="btn-secondary" id="boardAddBtn" style="padding:8px 16px;">＋ Agregar estudiante a esta sesión</button>
       <button class="btn-primary" id="mailGroupBtn" style="padding:8px 16px; width:auto; margin:0;">✉ Enviar resultados de esta sesión</button>
       <button class="btn-secondary" id="mailCfgBtn" style="padding:8px 12px;" title="Configurar el envío de correos">⚙ Correo</button>
+      <button class="btn-secondary" id="mailCheckBtn" style="padding:8px 12px;" title="Comprueba qué versión del script de correo está publicada">🔍 Verificar script</button>
       <span class="muted" id="mailCounter" style="font-size:.85rem;"></span>
     </div>
     <div class="board">
@@ -794,13 +795,13 @@ const emailFixLine = (p, s) => {
 async function doSendMails(items, force) {
   if (!getMailer()) { configureMailer(); if (!getMailer()) return; }
   const btn = document.getElementById("mailGroupBtn"); btn.disabled = true;
-  let ok = 0; const fails = [];
+  let ok = 0; const fails = []; const insts = new Set();
   try {
     for (let i = 0; i < items.length; i += 20) {
       const chunk = items.slice(i, i + 20);
       btn.textContent = `Enviando… ${Math.min(i + 20, items.length)}/${items.length}`;
       let results;
-      try { results = await sendResultEmails(chunk.map(({ s, p }) => mailMessage(s, p, force))); }
+      try { const msgs = chunk.map(({ s, p }) => mailMessage(s, p, force)); msgs.forEach(x => insts.add(x.institution)); results = await sendResultEmails(msgs); }
       catch (e) { chunk.forEach(({ s }) => fails.push(`${s.name}: ${e.message}`)); break; }
       for (const { s, p } of chunk) {
         const r = results.find(x => x.id === s.id);
@@ -809,7 +810,7 @@ async function doSendMails(items, force) {
       }
     }
   } finally { btn.disabled = false; btn.textContent = "✉ Enviar resultados de esta sesión"; }
-  alert(`Correos enviados: ${ok}` + (fails.length ? `\n\nNo se pudieron enviar (${fails.length}):\n` + fails.join("\n") : ""));
+  alert(`Correos enviados: ${ok}` + (insts.size ? `\nInstitución enviada al script: ${[...insts].map(k => (INSTITUTIONS[k] || {}).name || k || "(ninguna)").join(", ")}` : "") + (fails.length ? `\n\nNo se pudieron enviar (${fails.length}):\n` + fails.join("\n") : ""));
 }
 function configureMailer() {
   const cur = getMailer();
@@ -829,6 +830,17 @@ window.mailOne = async (sessionId, force) => {
   await doSendMails([{ s, p }], !!force);
 };
 document.getElementById("mailCfgBtn").addEventListener("click", configureMailer);
+document.getElementById("mailCheckBtn").addEventListener("click", async () => {
+  const m = getMailer();
+  if (!m) { alert("Primero configura el correo con el botón ⚙ Correo."); return; }
+  let d;
+  try { const r = await fetch(m.url); d = await r.json(); } catch (e) { alert("No se pudo leer el script en esa URL.\n\nURL guardada en este navegador:\n" + m.url + "\n\nRevisa que sea la URL /exec de la implementación."); return; }
+  if (d && d.version) {
+    alert("✔ Script NUEVO publicado.\nVersión: " + d.version + "\n\nCorreo por institución:\n" + Object.entries(d.info || {}).map(([k, v]) => "• " + k + " → " + v).join("\n") + "\n• cualquier otra → " + (d.default || "?") + "\n\nURL en uso:\n" + m.url);
+  } else {
+    alert("✖ Esta URL responde con el script VIEJO (sin correos por institución).\n\nPuede ser que: (1) no se publicó una 'Nueva versión' en Implementar → Administrar implementaciones, o (2) la URL guardada aquí es de otra implementación distinta.\n\nURL en uso:\n" + m.url);
+  }
+});
 document.getElementById("mailGroupBtn").addEventListener("click", async () => {
   if (!answerKey) { alert("Carga la clave de respuestas primero."); return; }
   const gid = document.getElementById("boardGroup").value;
