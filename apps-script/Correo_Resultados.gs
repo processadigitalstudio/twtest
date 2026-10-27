@@ -42,7 +42,9 @@ function esc_(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-function doGet() { return json_({ ok: true, service: 'resultados-tweetalig' }); }
+var VERSION = '2026-10-27-correo-por-institucion';
+// Abrir la URL /exec en el navegador muestra la versión publicada y la tabla de correos (sirve para confirmar que se publicó el código nuevo).
+function doGet() { return json_({ ok: true, service: 'resultados-tweetalig', version: VERSION, default: REPLY_TO, info: INFO_EMAILS }); }
 
 function doPost(e) {
   try {
