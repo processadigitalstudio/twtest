@@ -29,7 +29,7 @@
 <script type="module">
 import { watchResult } from "./js/exam-engine.js";
 import { CANDO } from "./js/cando.js";
-import { resolveInstitution, renderBrand, currentInstitutionSlug } from "./js/institutions.js";
+import { resolveInstitution, renderBrand, currentInstitutionSlug, infoEmailFor } from "./js/institutions.js";
 import { routeCopy, routeCards } from "./js/routes.js";
 
 const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -156,7 +156,7 @@ function render(r) {
 
     ${cta}
 
-    ${inst.slug === "eam" ? `<p class="muted" style="font-size:13px; text-align:center; margin-top:14px;">¿Dudas? Escríbenos a <b>info.eam@tweetalig.edu.co</b></p>` : ""}
+    <p class="muted" style="font-size:13px; text-align:center; margin-top:14px;">¿Dudas? Escríbenos a <b>${esc(infoEmailFor(inst.slug))}</b></p>
 
     <p class="muted" style="font-size:12.5px; margin-top:22px; text-align:center;">
       Este resultado es válido para el periodo académico 2026-2. Puedes cerrar esta ventana.
