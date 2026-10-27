@@ -181,8 +181,14 @@
     <div class="error-msg" id="grpMsg"></div>
 
     <h3 style="margin-top:32px;">Sesiones</h3>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+      <button class="btn-primary" id="mailAllBtn" style="padding:8px 16px; width:auto; margin:0;">✉ Enviar resultados pendientes de TODAS las sesiones</button>
+      <button class="btn-secondary" id="mailCfgBtn2" style="padding:8px 12px;" title="Configurar el envío de correos">⚙ Correo</button>
+      <button class="btn-secondary" id="mailCheckBtn2" style="padding:8px 12px;" title="Comprueba qué versión del script de correo está publicada">🔍 Verificar script</button>
+      <span class="muted" id="mailAllCounter" style="font-size:.85rem;"></span>
+    </div>
     <table class="admin-table">
-      <thead><tr><th>Sesión</th><th>Institución</th><th>Contraseña</th><th>Horario</th><th>Estado</th><th>Estudiantes</th><th></th></tr></thead>
+      <thead><tr><th>Sesión</th><th>Institución</th><th>Contraseña</th><th>Horario</th><th>Estado</th><th>Estudiantes</th><th>Correos de resultados</th><th></th></tr></thead>
       <tbody id="groupsBody"></tbody>
     </table>
 
@@ -409,12 +415,14 @@ function renderGroups() {
       <td style="font-size:12.5px;">${fmtDT(tsMs(g.opensAt))}<br>→ ${fmtDT(tsMs(g.closesAt))}</td>
       <td>${st.label}</td>
       <td class="mono">${mine.length}</td>
+      <td class="mailcell" data-g="${g.id}" style="font-size:.85rem;"></td>
       <td><button class="btn-secondary" data-manage="${g.id}" style="padding:6px 14px;">Gestionar</button></td>`;
     tb.appendChild(tr);
   }
-  if (!groupsCache.length) tb.innerHTML = `<tr><td colspan="7" class="muted">Aún no hay sesiones. Crea la primera arriba.</td></tr>`;
+  if (!groupsCache.length) tb.innerHTML = `<tr><td colspan="8" class="muted">Aún no hay sesiones. Crea la primera arriba.</td></tr>`;
   tb.querySelectorAll("[data-manage]").forEach(b => b.addEventListener("click", () => { selectedGroupId = b.dataset.manage; renderDetail(); document.getElementById("groupDetail").scrollIntoView({ behavior: "smooth" }); }));
   if (selectedGroupId) renderDetail();
+  refreshMailUI();
 }
 
 function renderDetail() {
@@ -427,6 +435,7 @@ function renderDetail() {
   box.innerHTML = `
     <h3 style="margin-top:0;">${esc(g.name)} · ${groupState(g).label}</h3>
     <p class="muted">Contraseña: <span class="mono"><b>${esc(g.password || "—")}</b></span></p>
+    <div id="dMailBox" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 16px; padding:10px 14px; border:1.5px solid var(--line); border-radius:10px;"></div>
     <div class="form-grid">
       <div><label>Abre</label><input type="datetime-local" id="dOpens" value="${toLocalInput(tsMs(g.opensAt))}"></div>
       <div><label>Cierra</label><input type="datetime-local" id="dCloses" value="${toLocalInput(tsMs(g.closesAt))}"></div>
@@ -455,11 +464,13 @@ function renderDetail() {
     <h4 style="margin-top:24px;">Estudiantes (${mine.length})</h4>
     <p class="muted">Si a alguien se le va la luz o el internet y su examen se cierra: <strong>↻ Language Use / Reading / Listening</strong>: repite SOLO esa prueba, con preguntas nuevas al azar y reloj completo; las demás pruebas se conservan. Si el estudiante ya había terminado, solo repite esa prueba y su resultado se recalcula al terminar. <strong>▶ continuar</strong>: sigue donde iba con los minutos que tú le fijes (para cortes que no fueron su culpa). <strong>↺ examen nuevo</strong>: descarta todo y empieza un examen nuevo. Todo sirve en el mismo u otro equipo. <strong>quitar</strong>: lo saca de la lista.</p>
     <table class="admin-table">
-      <thead><tr><th>Nombre</th><th>Cédula</th><th>Correo</th><th>Nivel</th><th>Estado</th><th></th></tr></thead>
+      <thead><tr><th>Nombre</th><th>Cédula</th><th>Correo</th><th>Nivel</th><th>Estado</th><th>Resultado por correo</th><th></th></tr></thead>
       <tbody>${mine.map(p => `<tr><td>${esc(p.name)}</td><td class="mono">${esc(p.cedula)}</td><td style="font-size:.85rem;">${esc(p.email || "—")} <span class="toggle-detail" onclick="fixEmail('${p.id}')" title="Corregir el correo">✏ corregir</span></td><td>${esc(p.nivel || "—")}</td><td>${labels[p.status] || p.status}</td>
+        <td class="pmail" data-p="${p.id}" style="font-size:.85rem;"></td>
         <td>${p.status !== "not_started" ? `<div style="margin-bottom:3px;">${sectButtons(p.id)}</div>` : ""}${["in_progress", "closed"].includes(p.status) ? `<span class="toggle-detail" data-resume="${p.id}" style="margin-right:10px;">▶ continuar</span>` : ""}${p.status !== "not_started" ? `<span class="toggle-detail" data-restart="${p.id}" style="margin-right:10px;">↺ examen nuevo</span>` : ""}<span class="toggle-detail" data-delpart="${p.id}" style="color:var(--bad);">quitar</span></td></tr>`).join("")}</tbody>
     </table>`;
 
+  refreshMailUI();
   const msg = (t) => { document.getElementById("dMsg").textContent = t; };
   document.getElementById("dSave").onclick = async () => {
     const o = new Date(document.getElementById("dOpens").value).getTime(), c = new Date(document.getElementById("dCloses").value).getTime();
@@ -719,6 +730,7 @@ function startLiveListener() {
     latestSessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     publishPending();
     renderBoard();
+    refreshMailUI();
   });
   onSnapshot(collection(db, "participants"), (snap) => {
     partsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -792,9 +804,12 @@ const emailFixLine = (p, s) => {
   const em = emailOf(s, p);
   return `<div class="sub" style="margin-top:4px;"><span class="mono" style="font-size:11px;${MAIL_OK_RE.test(em) ? "" : "color:var(--bad);"}">${em ? esc(em) : "sin correo"}</span> · <span class="toggle-detail" onclick="fixEmail('${p.id}')">✏ corregir correo</span></div>`;
 };
-async function doSendMails(items, force) {
+let mailBusy = false;
+async function doSendMails(items, force, btnEl) {
+  if (mailBusy) { alert("Ya hay un envío en curso. Espera a que termine."); return; }
   if (!getMailer()) { configureMailer(); if (!getMailer()) return; }
-  const btn = document.getElementById("mailGroupBtn"); btn.disabled = true;
+  mailBusy = true;
+  const btn = btnEl || document.getElementById("mailGroupBtn"); const btnLabel = btn.textContent; btn.disabled = true;
   let ok = 0; const fails = []; const insts = new Set();
   try {
     for (let i = 0; i < items.length; i += 20) {
@@ -809,9 +824,63 @@ async function doSendMails(items, force) {
         else fails.push(`${s.name}: ${r?.error || "sin respuesta"}`);
       }
     }
-  } finally { btn.disabled = false; btn.textContent = "✉ Enviar resultados de esta sesión"; }
+  } finally { btn.disabled = false; btn.textContent = btnEl ? btnLabel : "✉ Enviar resultados de esta sesión"; mailBusy = false; refreshMailUI(); }
   alert(`Correos enviados: ${ok}` + (insts.size ? `\nInstitución enviada al script: ${[...insts].map(k => (INSTITUTIONS[k] || {}).name || k || "(ninguna)").join(", ")}` : "") + (fails.length ? `\n\nNo se pudieron enviar (${fails.length}):\n` + fails.join("\n") : ""));
 }
+// ---- Envío de correos desde "Sesiones y estudiantes" (por sesión y para todas las sesiones) ----
+function latestByPart() {
+  const byPart = {};
+  for (const s of latestSessions) {
+    if (!s.participantId || s.status === "abandoned") continue;
+    const prev = byPart[s.participantId];
+    if (!prev || (s.startedAt?.seconds || 0) >= (prev.startedAt?.seconds || 0)) byPart[s.participantId] = s;
+  }
+  return byPart;
+}
+function mailStats(gid) {
+  const parts = partsCache.filter(p => p.groupId === gid), byPart = latestByPart();
+  const eligible = eligibleMails(parts, byPart);
+  const sent = parts.filter(p => byPart[p.id]?.emailDelivery?.status === "sent").length;
+  const noMail = parts.filter(p => { const s = byPart[p.id]; return s && s.status === "completed" && s.resultDelivery?.status === "published" && !MAIL_OK_RE.test(emailOf(s, p)); }).length;
+  const waiting = parts.filter(p => p.status !== "completed").length;
+  return { eligible, sent, noMail, waiting, total: parts.length };
+}
+function refreshMailUI() {
+  try {
+    let totalPending = 0;
+    document.querySelectorAll("#groupsBody .mailcell").forEach(td => {
+      const st = mailStats(td.dataset.g); totalPending += st.eligible.length;
+      td.innerHTML = `<b>${st.eligible.length}</b> por enviar · ${st.sent} enviados` + (st.noMail ? `<br><span style="color:var(--bad);">⚠ ${st.noMail} sin correo válido</span>` : "")
+        + (st.eligible.length ? `<br><span class="toggle-detail" onclick="mailSession('${td.dataset.g}')">✉ Enviar ${st.eligible.length}</span>` : "");
+    });
+    const ac = document.getElementById("mailAllCounter"); if (ac) ac.textContent = `${totalPending} por enviar en total`;
+    const box = document.getElementById("dMailBox");
+    if (box && selectedGroupId) {
+      const st = mailStats(selectedGroupId);
+      box.innerHTML = `<b>✉ Resultados por correo</b><span class="muted">${st.eligible.length} por enviar · ${st.sent} enviados · ${st.waiting} aún sin terminar` + (st.noMail ? ` · <span style="color:var(--bad);">⚠ ${st.noMail} sin correo válido</span>` : "") + `</span>`
+        + `<button class="btn-primary" id="dMailBtn" style="padding:7px 16px; width:auto; margin:0;" ${st.eligible.length && !mailBusy ? "" : "disabled"} onclick="mailSession('${selectedGroupId}')">✉ Enviar resultados pendientes (${st.eligible.length})</button>`;
+    }
+    const byPart = latestByPart();
+    document.querySelectorAll("#groupDetail .pmail").forEach(td => {
+      const p = partsCache.find(x => x.id === td.dataset.p); if (!p) return;
+      const s = byPart[p.id];
+      if (!s || s.status !== "completed") td.innerHTML = `<span class="muted">—</span>`;
+      else if (s.resultDelivery?.status !== "published") td.innerHTML = `<span class="muted">⏳ sin publicar</span>`;
+      else td.innerHTML = mailLine(s, p);
+    });
+  } catch (e) { console.warn(e); }
+}
+window.mailSession = async (gid) => {
+  if (mailBusy) { alert("Ya hay un envío en curso. Espera a que termine."); return; }
+  if (!answerKey) { alert("Carga la clave de respuestas primero."); return; }
+  const g = groupsCache.find(x => x.id === gid); if (!g) return;
+  const st = mailStats(gid);
+  if (!st.eligible.length) { alert("No hay resultados pendientes en esta sesión (deben estar terminados, publicados y con correo válido)."); return; }
+  const instName = (INSTITUTIONS[g.institution] || {}).name || g.institution || "sin institución";
+  if (!confirm(`Se ${st.eligible.length === 1 ? "enviará 1 correo" : "enviarán " + st.eligible.length + " correos"} con el resultado, desde el correo de Exámenes.\n\nSesión: ${g.name}\nInstitución (define el correo de contacto): ${instName}\n\n¿Continuar?`)) return;
+  const btn = document.getElementById("dMailBtn");
+  await doSendMails(st.eligible, false, btn && selectedGroupId === gid ? btn : document.getElementById("mailAllBtn"));
+};
 function configureMailer() {
   const cur = getMailer();
   const url = prompt("Pega la URL de la aplicación web del Apps Script (termina en /exec).\nDeja vacío para borrar la configuración.", cur?.url || "");
@@ -830,7 +899,17 @@ window.mailOne = async (sessionId, force) => {
   await doSendMails([{ s, p }], !!force);
 };
 document.getElementById("mailCfgBtn").addEventListener("click", configureMailer);
-document.getElementById("mailCheckBtn").addEventListener("click", async () => {
+document.getElementById("mailCfgBtn2").addEventListener("click", configureMailer);
+document.getElementById("mailAllBtn").addEventListener("click", async () => {
+  if (mailBusy) { alert("Ya hay un envío en curso. Espera a que termine."); return; }
+  if (!answerKey) { alert("Carga la clave de respuestas primero."); return; }
+  const lines = [], items = [];
+  for (const g of groupsCache) { const st = mailStats(g.id); if (st.eligible.length) { items.push(...st.eligible); lines.push(`• ${g.name} (${(INSTITUTIONS[g.institution] || {}).name || g.institution || "sin institución"}): ${st.eligible.length}`); } }
+  if (!items.length) { alert("No hay resultados pendientes de enviar en ninguna sesión (deben estar terminados, publicados y con correo válido)."); return; }
+  if (!confirm(`Se ${items.length === 1 ? "enviará 1 correo" : "enviarán " + items.length + " correos"} con el resultado, desde el correo de Exámenes:\n\n${lines.join("\n")}\n\nSolo a quienes ya terminaron y aún no lo han recibido. ¿Continuar?`)) return;
+  await doSendMails(items, false, document.getElementById("mailAllBtn"));
+});
+for (const id of ["mailCheckBtn", "mailCheckBtn2"]) document.getElementById(id).addEventListener("click", async () => {
   const m = getMailer();
   if (!m) { alert("Primero configura el correo con el botón ⚙ Correo."); return; }
   let d;
