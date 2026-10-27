@@ -15,7 +15,7 @@
  */
 var FROM_NAME = 'Centro de Idiomas Tweetalig';
 var LOGO_URL = 'https://tweetaligtest.web.app/img/brand/tweetalig-logo.png';
-var REPLY_TO = 'info.eam@tweetalig.edu.co';     // por defecto (EAM y cualquier institución que no esté en la tabla)
+var REPLY_TO = 'coordinador.cartagena@tweetalig.edu.co';     // por defecto (Tweetalig y cualquier institución que no esté en la tabla)
 // Correo de información según la institución de la sesión (el panel envía m.institution). Misma tabla que js/institutions.js.
 var INFO_EMAILS = {
   eam: 'info.eam@tweetalig.edu.co',

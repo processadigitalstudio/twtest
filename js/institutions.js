@@ -51,13 +51,13 @@ export const INSTITUTIONS = {
 };
 
 // Correo de información/dudas que ve el estudiante según su institución (resultado en pantalla y correo de resultados).
-// Si una institución no está aquí, se usa el de EAM. IMPORTANTE: el Apps Script (apps-script/Correo_Resultados.gs) tiene la misma tabla.
+// Si una institución no está aquí (Tweetalig u otra), se usa el de la coordinación Cartagena. IMPORTANTE: el Apps Script (apps-script/Correo_Resultados.gs) tiene la misma tabla.
 export const INFO_EMAILS = {
   eam: "info.eam@tweetalig.edu.co",
   unitecnar: "unitecnar@tweetalig.edu.co",
   uniajs: "info.sincelejo@tweetalig.edu.co"
 };
-export const DEFAULT_INFO_EMAIL = "info.eam@tweetalig.edu.co";
+export const DEFAULT_INFO_EMAIL = "coordinador.cartagena@tweetalig.edu.co";   // Tweetalig y cualquier otra institución
 export const infoEmailFor = (slug) => INFO_EMAILS[String(slug || "").toLowerCase()] || DEFAULT_INFO_EMAIL;
 
 export function resolveInstitution(slug) {
