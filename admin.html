@@ -851,7 +851,7 @@ function refreshMailUI() {
     document.querySelectorAll("#groupsBody .mailcell").forEach(td => {
       const st = mailStats(td.dataset.g); totalPending += st.eligible.length;
       td.innerHTML = `<b>${st.eligible.length}</b> por enviar · ${st.sent} enviados` + (st.noMail ? `<br><span style="color:var(--bad);">⚠ ${st.noMail} sin correo válido</span>` : "")
-        + (st.eligible.length ? `<br><span class="toggle-detail" onclick="mailSession('${td.dataset.g}')">✉ Enviar ${st.eligible.length}</span>` : "");
+        + `<br><button class="btn-primary" style="padding:6px 12px; width:auto; margin:6px 0 0; font-size:.85rem;" ${st.eligible.length && !mailBusy ? "" : "disabled"} onclick="mailSession('${td.dataset.g}', this)">✉ Enviar a esta sesión (${st.eligible.length})</button>`;
     });
     const ac = document.getElementById("mailAllCounter"); if (ac) ac.textContent = `${totalPending} por enviar en total`;
     const box = document.getElementById("dMailBox");
@@ -870,7 +870,7 @@ function refreshMailUI() {
     });
   } catch (e) { console.warn(e); }
 }
-window.mailSession = async (gid) => {
+window.mailSession = async (gid, rowBtn) => {
   if (mailBusy) { alert("Ya hay un envío en curso. Espera a que termine."); return; }
   if (!answerKey) { alert("Carga la clave de respuestas primero."); return; }
   const g = groupsCache.find(x => x.id === gid); if (!g) return;
@@ -878,8 +878,8 @@ window.mailSession = async (gid) => {
   if (!st.eligible.length) { alert("No hay resultados pendientes en esta sesión (deben estar terminados, publicados y con correo válido)."); return; }
   const instName = (INSTITUTIONS[g.institution] || {}).name || g.institution || "sin institución";
   if (!confirm(`Se ${st.eligible.length === 1 ? "enviará 1 correo" : "enviarán " + st.eligible.length + " correos"} con el resultado, desde el correo de Exámenes.\n\nSesión: ${g.name}\nInstitución (define el correo de contacto): ${instName}\n\n¿Continuar?`)) return;
-  const btn = document.getElementById("dMailBtn");
-  await doSendMails(st.eligible, false, btn && selectedGroupId === gid ? btn : document.getElementById("mailAllBtn"));
+  const btn = rowBtn || document.getElementById("dMailBtn") || document.getElementById("mailAllBtn");
+  await doSendMails(st.eligible, false, btn);
 };
 function configureMailer() {
   const cur = getMailer();
