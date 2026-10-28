@@ -250,6 +250,7 @@ import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/1
 // Usuarios de sede (p. ej. Sincelejo): crean sus sesiones y estudiantes, ven su estado y sus resultados. NO envían correos,
 // ni ven análisis por ítem / Panel Bookmark, ni tocan sesiones de otros. (La seguridad real está en firestore.rules; esto solo ajusta lo que se ve.)
 const STAFF_EMAILS = ["examenes.sincelejo@tweetalig.edu.co"];
+const STAFF_LABELS = { "examenes.sincelejo@tweetalig.edu.co": "Sede Sincelejo" };      // etiqueta con la que la administradora reconoce las sesiones creadas por cada usuario de sede
 const STAFF_EDIT_GRACE_MS = 24 * 3600 * 1000;      // misma regla que en firestore.rules: una sesión propia se puede modificar hasta 1 día después de su cierre
 let STAFF = false, ME_UID = "";
 let resultsById = {};                               // solo usuarios de sede: resultados publicados de sus sesiones (results/{id})
@@ -375,6 +376,7 @@ async function loadDashboard() {
 }
 
 // ---------------- SESIONES DE EXAMEN ----------------
+const creatorOf = (g) => g && g.createdBy ? (g.createdByLabel || "Sede") : "";        // quién creó la sesión (solo las de usuarios de sede llevan marca)
 const esc = (t) => String(t ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const fmtDT = (ms) => ms ? new Date(ms).toLocaleString("es-CO", { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) : "—";
 const toLocalInput = (ms) => { const d = new Date(ms); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 16); };
@@ -453,7 +455,7 @@ function renderGroups() {
     const st = groupState(g);
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><b>${esc(g.name)}</b></td>
+      <td><b>${esc(g.name)}</b>${!STAFF && creatorOf(g) ? `<div class="sub" style="margin-top:3px;"><span class="sev-badge" style="background:var(--ink-soft, #52616F);">👤 ${esc(creatorOf(g))}</span></div>` : ""}</td>
       <td>${esc((INSTITUTIONS[g.institution] || {}).name || g.institution || "—")}</td>
       <td class="mono">${esc(g.password || "—")}</td>
       <td style="font-size:12.5px;">${fmtDT(tsMs(g.opensAt))}<br>→ ${fmtDT(tsMs(g.closesAt))}</td>
@@ -477,7 +479,7 @@ function renderDetail() {
   const labels = { not_started: "⚪ Sin iniciar", in_progress: "🟡 En proceso", closed: "⛔ Cerrado (interrupción)", completed: "✅ Finalizado" };
   box.style.display = "block";
   box.innerHTML = `
-    <h3 style="margin-top:0;">${esc(g.name)} · ${groupState(g).label}</h3>
+    <h3 style="margin-top:0;">${esc(g.name)} · ${groupState(g).label}${!STAFF && creatorOf(g) ? ` <span class="sev-badge" style="background:var(--ink-soft, #52616F);">👤 ${esc(creatorOf(g))}</span>` : ""}</h3>
     <p class="muted">Contraseña: <span class="mono"><b>${esc(g.password || "—")}</b></span></p>
     <div id="dMailBox" class="admin-only" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 16px; padding:10px 14px; border:1.5px solid var(--line); border-radius:10px;"></div>
     <div class="form-grid">
@@ -746,7 +748,7 @@ document.getElementById("createGroupBtn").addEventListener("click", async () => 
   if ((await getDoc(doc(db, "exam_groups", id))).exists()) { msg.textContent = "Ya existe una sesión con exactamente esa contraseña. Usa otra."; return; }
   const btn = document.getElementById("createGroupBtn"); btn.disabled = true;
   const g = { id, name, institution: grpInst.value };
-  await setDoc(doc(db, "exam_groups", id), { name, institution: g.institution, enabled: true, opensAt: Timestamp.fromMillis(o), closesAt: Timestamp.fromMillis(c), createdAt: serverTimestamp(), ...(STAFF ? { createdBy: ME_UID } : {}) });
+  await setDoc(doc(db, "exam_groups", id), { name, institution: g.institution, enabled: true, opensAt: Timestamp.fromMillis(o), closesAt: Timestamp.fromMillis(c), createdAt: serverTimestamp(), ...(STAFF ? { createdBy: ME_UID, createdByLabel: STAFF_LABELS[String(auth.currentUser?.email || "").toLowerCase()] || "Sede" } : {}) });
   await setDoc(doc(db, "group_secrets", id), { password });
   let n = 0;
   for (const r of rows) { await setDoc(doc(db, "participants", participantIdOf(id, r.cedula)), newParticipant(g, r)); btn.textContent = `Cargando estudiantes… ${++n}/${rows.length}`; }
@@ -812,7 +814,7 @@ function startLiveListener() {
 function fillBoardSelect() {
   const sel = document.getElementById("boardGroup");
   const cur = sel.value;
-  sel.innerHTML = `<option value="">Todas las sesiones</option>` + groupsCache.map(g => `<option value="${g.id}">${esc(g.name)}</option>`).join("");
+  sel.innerHTML = `<option value="">Todas las sesiones</option>` + groupsCache.map(g => `<option value="${g.id}">${esc(g.name)}${!STAFF && creatorOf(g) ? " · 👤 " + esc(creatorOf(g)) : ""}</option>`).join("");
   if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
 }
 document.getElementById("boardGroup").addEventListener("change", renderBoard);
@@ -948,7 +950,7 @@ window.mailSession = async (gid, rowBtn) => {
   const st = mailStats(gid);
   if (!st.eligible.length) { alert("No hay resultados pendientes en esta sesión (deben estar terminados, publicados y con correo válido)."); return; }
   const instName = (INSTITUTIONS[g.institution] || {}).name || g.institution || "sin institución";
-  if (!confirm(`Se ${st.eligible.length === 1 ? "enviará 1 correo" : "enviarán " + st.eligible.length + " correos"} con el resultado, desde el correo de Exámenes.\n\nSesión: ${g.name}\nInstitución (define el correo de contacto): ${instName}\n\n¿Continuar?`)) return;
+  if (!confirm(`Se ${st.eligible.length === 1 ? "enviará 1 correo" : "enviarán " + st.eligible.length + " correos"} con el resultado, desde el correo de Exámenes.\n\nSesión: ${g.name}${creatorOf(g) ? " (creada por " + creatorOf(g) + ")" : ""}\nInstitución (define el correo de contacto): ${instName}\n\n¿Continuar?`)) return;
   const btn = rowBtn || document.getElementById("dMailBtn") || document.getElementById("mailAllBtn");
   await doSendMails(st.eligible, false, btn);
 };
@@ -1359,7 +1361,7 @@ function instNameOf(...objs) {
 
 document.getElementById("exportStudentsBtn").addEventListener("click", () => {
   const q = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const header = ["cedula", "nombres", "apellidos", "correo", "telefono", "nivel_requerido_grado", "sesion", "institucion", "estado", "nivel_obtenido", "cumple_nivel_requerido", "nota_final",
+  const header = ["cedula", "nombres", "apellidos", "correo", "telefono", "nivel_requerido_grado", "sesion", "institucion", "creada_por", "estado", "nivel_obtenido", "cumple_nivel_requerido", "nota_final",
     "language_use_pct", "reading_comprehension_pct", "listening_comprehension_pct", "eventos_sospechosos", "reaperturas"];
   const order = { A1: 1, A2: 2, B1: 3, B2: 4 };
   // Se arma desde los INTENTOS (sessions) + los participantes que aún no han iniciado. Así el archivo nunca sale vacío
@@ -1391,7 +1393,7 @@ document.getElementById("exportStudentsBtn").addEventListener("click", () => {
     const meets = r && req ? (order[r.level] >= order[req] ? "SI" : "NO") : "";
     const st = sess ? (sess.status === "completed" ? "completed" : p.status === "closed" || sess.status === "closed" ? "closed" : sess.status) : p.status;
     const status = { not_started: "sin iniciar", in_progress: "en proceso", closed: "cerrado por interrupcion", completed: "finalizado" }[st] || st;
-    lines.push([p.cedula, prof.nombres || p.nombres, prof.apellidos || p.apellidos, prof.email || p.email, prof.telefono || p.telefono, req, p.groupName || sess?.groupName, instNameOf(sess, p), status, r?.level, meets, r?.finalScore,
+    lines.push([p.cedula, prof.nombres || p.nombres, prof.apellidos || p.apellidos, prof.email || p.email, prof.telefono || p.telefono, req, p.groupName || sess?.groupName, instNameOf(sess, p), creatorOf(groupsCache.find(x => x.id === (p.groupId || sess?.groupId))), status, r?.level, meets, r?.finalScore,
       r?.pct?.UoL, r?.pct?.Reading, r?.pct?.Listening, (sess?.suspiciousEvents || []).length, sess?.reopenCount || 0].map(q).join(","));
   }
   if (lines.length === 1) { alert("No hay estudiantes ni intentos para exportar todavía. Espera unos segundos a que cargue el panel y vuelve a intentar."); return; }
