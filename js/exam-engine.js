@@ -221,7 +221,7 @@ export async function loginToGroup({ cedula, password }) {
     ok: true, participantId: pid, cedula: ced, name: part.name || "",
     profile: { nombres: part.nombres || "", apellidos: part.apellidos || "", email: part.email || "", telefono: part.telefono || "", nivel: part.nivel || "" },
     resume: rs,
-    groupId, groupName: group.name || "", institution: group.institution || ""
+    groupId, groupName: group.name || "", institution: group.institution || "", ownerUid: group.createdBy || ""
   };
 }
 
@@ -239,7 +239,7 @@ export async function createSession(ctx, plan) {
   await setDoc(doc(db, "sessions", sessionId), {
     username: ctx.cedula, name: ctx.name, email: profile.email || "",
     profile: { ...profile, cedula: ctx.cedula, confirmedAtMs: Date.now() },
-    institution: ctx.institution, groupId: ctx.groupId, groupName: ctx.groupName, participantId: ctx.participantId,
+    institution: ctx.institution, groupId: ctx.groupId, groupName: ctx.groupName, participantId: ctx.participantId, ownerUid: ctx.ownerUid || "",
     itemIds: allItemIdsFromPlan(plan),
     planJson: JSON.stringify(plan),                      // permite que la administradora reabra el examen en otro equipo
     progress: { sectionIndex: 0, pageIndex: 0, sectionStartTimes: {}, sectionInstructionShown: [false, false, false], audioPlayCounts: {} },
@@ -349,7 +349,7 @@ export function watchResult(sessionId, callback) {
 
 export async function publishResult(session, r) {
   await setDoc(doc(db, "results", session.id), {
-    name: session.name || "", institution: session.institution || "",
+    name: session.name || "", institution: session.institution || "", ownerUid: session.ownerUid || "",
     level: r.level, finalScore: r.finalScore, pct: r.pct, points: r.points,
     publishedAt: serverTimestamp()
   });

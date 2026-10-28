@@ -7,6 +7,25 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == 'UIsTtqPwumUidDNfbvCQqbCUpbx1';
     }
 
+    // Usuarios de sede (p. ej. Sincelejo), identificados por su correo de inicio de sesión. Pueden crear SUS sesiones y estudiantes,
+    // ver su estado y sus resultados publicados y reiniciar/reabrir a sus estudiantes; NO leen la clave de respuestas, NO publican
+    // resultados, NO tocan sesiones de otros y NO modifican las suyas pasado 1 día desde su cierre.
+    function isStaff() {
+      return request.auth != null && 'email' in request.auth.token &&
+        request.auth.token.email.lower() in ['examenes.sincelejo@tweetalig.edu.co'];
+    }
+    // Sesión de examen propia (creada por este usuario de sede) y todavía modificable. isStaff() va primero: a los
+    // estudiantes (que no son de sede) nunca se les evalúa el get() de la sesión, así no se suman lecturas en cada guardado.
+    function staffEditable(g) {
+      return g.get('createdBy', '') == request.auth.uid && request.time < g.closesAt + duration.value(1, 'd');
+    }
+    function staffCanEdit(gid) {
+      return isStaff() && staffEditable(get(/databases/$(database)/documents/exam_groups/$(gid)).data);
+    }
+    function staffOwnsGroup(gid) {
+      return isStaff() && get(/databases/$(database)/documents/exam_groups/$(gid)).data.get('createdBy', '') == request.auth.uid;
+    }
+
     // La sesión está abierta si no está pausada y la hora del SERVIDOR está dentro de su horario.
     function groupOpen(gid) {
       let g = get(/databases/$(database)/documents/exam_groups/$(gid)).data;
@@ -18,9 +37,17 @@ service cloud.firestore {
     match /exam_groups/{gid} {
       allow get: if true;
       allow list, write: if isAdmin();
+      // sede: lista y crea las suyas; las modifica/borra hasta 1 día después de su cierre
+      allow list: if isStaff() && resource.data.createdBy == request.auth.uid;
+      allow create: if isStaff() && request.resource.data.createdBy == request.auth.uid;
+      allow update: if staffCanEdit(gid) && request.resource.data.createdBy == request.auth.uid;
+      allow delete: if staffCanEdit(gid);
     }
     match /group_secrets/{gid} {
       allow read, write: if isAdmin();
+      allow get: if staffOwnsGroup(gid);
+      allow create: if staffOwnsGroup(gid);
+      allow update, delete: if staffCanEdit(gid);
     }
 
     // Participante = estudiante cargado por la admin en una sesión (cédula, nombres, apellidos, correo, nivel).
@@ -30,6 +57,12 @@ service cloud.firestore {
     match /participants/{pid} {
       allow get: if true;
       allow list, create, delete: if isAdmin();
+      // sede: sus estudiantes (ownerUid) dentro de sus sesiones modificables
+      allow list: if isStaff() && resource.data.ownerUid == request.auth.uid;
+      allow create: if isStaff() && request.resource.data.ownerUid == request.auth.uid && staffCanEdit(request.resource.data.groupId);
+      allow delete: if staffCanEdit(resource.data.groupId) && resource.data.get('ownerUid', '') == request.auth.uid;
+      allow update: if staffCanEdit(resource.data.groupId) && resource.data.get('ownerUid', '') == request.auth.uid &&
+        request.resource.data.ownerUid == request.auth.uid && request.resource.data.groupId == resource.data.groupId;
       allow update: if isAdmin() || (
         resource.data.status in ['not_started', 'in_progress'] &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'usedAt', 'resumeConsumed']) &&
@@ -45,13 +78,20 @@ service cloud.firestore {
     // y lo actualiza mientras esté en curso (respuestas, avance, eventos, cierre por interrupción o final).
     match /sessions/{id} {
       allow read, delete: if isAdmin();
+      // sede: lee los intentos de sus sesiones; los reabre/reinicia (solo campos de reapertura) y descarta, mientras la sesión sea modificable
+      allow read: if isStaff() && resource.data.ownerUid == request.auth.uid;
+      allow delete: if staffCanEdit(resource.data.groupId) && resource.data.get('ownerUid', '') == request.auth.uid;
+      allow update: if staffCanEdit(resource.data.groupId) && resource.data.get('ownerUid', '') == request.auth.uid &&
+        request.resource.data.ownerUid == resource.data.ownerUid &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'reopenedAt', 'reopenCount', 'planJson', 'itemIds', 'responses', 'progress', 'sectionRestarts', 'resultDelivery', 'profile']);
       allow create: if request.resource.data.status == 'in_progress'
                     && groupOpen(request.resource.data.groupId)
                     && get(/databases/$(database)/documents/participants/$(request.resource.data.participantId)).data.status == 'not_started';
       allow update: if isAdmin() || (
         resource.data.status == 'in_progress' &&
         !request.resource.data.diff(resource.data).affectedKeys()
-          .hasAny(['username', 'name', 'email', 'profile', 'institution', 'groupId', 'groupName', 'participantId', 'itemIds', 'planJson', 'bankVersion', 'resultDelivery', 'startedAt', 'reopenedAt', 'reopenCount']) &&
+          .hasAny(['username', 'name', 'email', 'profile', 'institution', 'groupId', 'groupName', 'participantId', 'itemIds', 'planJson', 'bankVersion', 'resultDelivery', 'startedAt', 'reopenedAt', 'reopenCount', 'ownerUid']) &&
         request.resource.data.status in ['in_progress', 'completed', 'closed']
       );
     }
@@ -60,6 +100,7 @@ service cloud.firestore {
     match /results/{id} {
       allow get: if true;
       allow list, write: if isAdmin();
+      allow list: if isStaff() && resource.data.ownerUid == request.auth.uid;     // sede: solo lee los de sus sesiones
     }
 
     // Clave de respuestas: solo admin.

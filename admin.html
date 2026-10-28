@@ -79,6 +79,9 @@
   .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px 16px; margin: 14px 0; }
   .form-grid input, .form-grid select { width: 100%; padding: 11px 12px; border: 1.5px solid var(--line); border-radius: 8px; background: var(--bg); font-size: 14px; }
   .detail-card { background: var(--bg-panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; }
+body.staff .admin-only { display: none !important; }
+#staffNote { display:none; margin:0 0 14px; padding:10px 14px; background:var(--gold-soft); border-radius:8px; }
+body.staff #staffNote { display:block; }
 </style>
 </head>
 <body>
@@ -100,8 +103,9 @@
   <div class="eyebrow">Tweetalig · Diagnóstico</div>
   <h1>Dashboard del examen</h1>
 
+  <div id="staffNote"><b>Usuario de sede.</b> Ves y manejas solo las sesiones que tú creas. Los resultados aparecen cuando la coordinación los publica.</div>
   <div class="muted" id="oldSessionsNote" style="display:none; margin-bottom:12px; padding:10px 14px; background:var(--gold-soft); border-radius:8px;"></div>
-  <div class="key-banner" id="keyBanner" style="display:none;">
+  <div class="key-banner admin-only" id="keyBanner" style="display:none;">
     <div>
       <strong id="keyBannerText">Cargando estado de la clave de respuestas...</strong>
       <div class="muted" style="margin-top:4px;">La clave nunca se sube a GitHub — solo vive aquí, protegida, en Firestore.</div>
@@ -118,12 +122,12 @@
     <div class="tab active" data-tab="live">Estado de la sesión</div>
     <div class="tab" data-tab="access">Sesiones y estudiantes</div>
     <div class="tab" data-tab="sessions">Resultados</div>
-    <div class="tab" data-tab="items">Análisis por ítem</div>
-    <div class="tab" data-tab="bookmark">📊 Panel Bookmark</div>
+    <div class="tab admin-only" data-tab="items">Análisis por ítem</div>
+    <div class="tab admin-only" data-tab="bookmark">📊 Panel Bookmark</div>
   </div>
 
   <div class="section active" id="liveSection">
-    <div class="key-banner" style="margin-bottom:14px;">
+    <div class="key-banner admin-only" style="margin-bottom:14px;">
       <div>
         <strong>Los estudiantes ven su resultado cuando este panel lo publica.</strong>
         <div class="muted" style="margin-top:4px;">Deja esta página abierta durante el examen, con la sesión iniciada y la clave cargada.</div>
@@ -135,10 +139,10 @@
       <select id="boardGroup" style="padding:9px 12px; border:1.5px solid var(--line); border-radius:8px; background:var(--bg);"></select>
       <span class="mono muted" id="boardCounters"></span>
       <button class="btn-secondary" id="boardAddBtn" style="padding:8px 16px;">＋ Agregar estudiante a esta sesión</button>
-      <button class="btn-primary" id="mailGroupBtn" style="padding:8px 16px; width:auto; margin:0;">✉ Enviar resultados de esta sesión</button>
-      <button class="btn-secondary" id="mailCfgBtn" style="padding:8px 12px;" title="Configurar el envío de correos">⚙ Correo</button>
-      <button class="btn-secondary" id="mailCheckBtn" style="padding:8px 12px;" title="Comprueba qué versión del script de correo está publicada">🔍 Verificar script</button>
-      <span class="muted" id="mailCounter" style="font-size:.85rem;"></span>
+      <button class="btn-primary admin-only" id="mailGroupBtn" style="padding:8px 16px; width:auto; margin:0;">✉ Enviar resultados de esta sesión</button>
+      <button class="btn-secondary admin-only" id="mailCfgBtn" style="padding:8px 12px;" title="Configurar el envío de correos">⚙ Correo</button>
+      <button class="btn-secondary admin-only" id="mailCheckBtn" style="padding:8px 12px;" title="Comprueba qué versión del script de correo está publicada">🔍 Verificar script</button>
+      <span class="muted admin-only" id="mailCounter" style="font-size:.85rem;"></span>
     </div>
     <div class="board">
       <div class="board-col col-wait"><h3>⚪ Sin iniciar <span id="cntNot" class="count">0</span></h3><div id="colNot"></div></div>
@@ -149,14 +153,14 @@
 
   <div class="section" id="sessionsSection">
     <button class="btn-primary" id="exportStudentsBtn" style="width:auto; margin:0 8px 8px 0;">⬇ Exportar resultados por estudiante (CSV)</button>
-    <button class="btn-secondary" id="exportCsvBtn">⬇ Exportar respuestas por pregunta (CSV)</button>
+    <button class="btn-secondary admin-only" id="exportCsvBtn">⬇ Exportar respuestas por pregunta (CSV)</button>
     <table class="admin-table">
       <thead><tr><th></th><th>Nombre</th><th>Usuario</th><th>Language Use</th><th>Reading Comp.</th><th>Listening Comp.</th><th>Nota final</th><th>Nivel</th><th>Alertas</th><th>Eventos</th></tr></thead>
       <tbody id="sessionsBody"></tbody>
     </table>
   </div>
 
-  <div class="section" id="itemsSection">
+  <div class="section admin-only" id="itemsSection">
     <p class="muted">p = % que respondió bien · disc = discriminación punto-biserial. Click en "ver" para el enunciado completo, opciones, y la respuesta correcta.</p>
     <table class="admin-table">
       <thead><tr><th></th><th>ID</th><th>Destreza</th><th>Nivel</th><th>Categoría</th><th>n</th><th>p</th><th>disc.</th><th>Estado</th></tr></thead>
@@ -181,21 +185,21 @@
     <div class="error-msg" id="grpMsg"></div>
 
     <h3 style="margin-top:32px;">Sesiones</h3>
-    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+    <div class="admin-only" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
       <button class="btn-primary" id="mailAllBtn" style="padding:8px 16px; width:auto; margin:0;">✉ Enviar resultados pendientes de TODAS las sesiones</button>
       <button class="btn-secondary" id="mailCfgBtn2" style="padding:8px 12px;" title="Configurar el envío de correos">⚙ Correo</button>
       <button class="btn-secondary" id="mailCheckBtn2" style="padding:8px 12px;" title="Comprueba qué versión del script de correo está publicada">🔍 Verificar script</button>
       <span class="muted" id="mailAllCounter" style="font-size:.85rem;"></span>
     </div>
     <table class="admin-table">
-      <thead><tr><th>Sesión</th><th>Institución</th><th>Contraseña</th><th>Horario</th><th>Estado</th><th>Estudiantes</th><th>Correos de resultados</th><th></th></tr></thead>
+      <thead><tr><th>Sesión</th><th>Institución</th><th>Contraseña</th><th>Horario</th><th>Estado</th><th>Estudiantes</th><th class="admin-only">Correos de resultados</th><th></th></tr></thead>
       <tbody id="groupsBody"></tbody>
     </table>
 
     <div id="groupDetail" style="display:none; margin-top:28px;" class="detail-card"></div>
   </div>
 
-  <div class="section" id="bookmarkSection">
+  <div class="section admin-only" id="bookmarkSection">
     <h3>1. Generar el orden de dificultad</h3>
     <p class="muted">Usa los datos reales del piloto (p-value) para ordenar los 560 ítems de más fácil a más difícil. Necesitas la clave de respuestas cargada y suficientes sesiones completadas para que el orden tenga sentido.</p>
     <button class="btn-primary" id="generateOrderBtn" style="width:auto;">Generar orden para Bookmark</button>
@@ -243,6 +247,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
+// Usuarios de sede (p. ej. Sincelejo): crean sus sesiones y estudiantes, ven su estado y sus resultados. NO envían correos,
+// ni ven análisis por ítem / Panel Bookmark, ni tocan sesiones de otros. (La seguridad real está en firestore.rules; esto solo ajusta lo que se ve.)
+const STAFF_EMAILS = ["examenes.sincelejo@tweetalig.edu.co"];
+const STAFF_EDIT_GRACE_MS = 24 * 3600 * 1000;      // misma regla que en firestore.rules: una sesión propia se puede modificar hasta 1 día después de su cierre
+let STAFF = false, ME_UID = "";
+let resultsById = {};                               // solo usuarios de sede: resultados publicados de sus sesiones (results/{id})
+
 
 document.getElementById("pwBtn").addEventListener("click", async () => {
   const email = document.getElementById("emailInput").value.trim();
@@ -251,6 +262,9 @@ document.getElementById("pwBtn").addEventListener("click", async () => {
   errEl.textContent = "";
   try {
     await signInWithEmailAndPassword(auth, email, pw);
+    ME_UID = auth.currentUser?.uid || "";
+    STAFF = STAFF_EMAILS.includes(String(auth.currentUser?.email || "").toLowerCase());
+    document.body.classList.toggle("staff", STAFF);
     document.getElementById("loginGate").style.display = "none";
     document.getElementById("dashboard").style.display = "block";
     await loadDashboard();
@@ -310,7 +324,31 @@ document.getElementById("keyFileInput").addEventListener("change", async (e) => 
   }
 });
 
+// ---- Usuario de sede: consultas siempre acotadas a lo suyo (así lo exigen las reglas) ----
+const sessQ = (...extra) => STAFF ? query(collection(db, "sessions"), where("ownerUid", "==", ME_UID), ...extra) : query(collection(db, "sessions"), ...extra);
+function resultOf(s) {                              // resultado para mostrar: con clave se calcula; sin clave (sede) sale del resultado publicado
+  if (!s) return null;
+  if (answerKey) { try { return computeSessionResults(s, answerKey); } catch (e) { return null; } }
+  const d = resultsById[s.id];
+  return d ? { level: d.level, finalScore: d.finalScore, pct: d.pct } : null;
+}
+function staffLocked(groupId) {                     // true si esta sesión ya no se puede modificar (solo sede)
+  if (!STAFF) return false;
+  const g = groupsCache.find(x => x.id === groupId);
+  return !g || (tsMs(g.closesAt) + STAFF_EDIT_GRACE_MS) < Date.now();
+}
+async function loadStaffResults() {
+  const snap = await getDocs(query(collection(db, "results"), where("ownerUid", "==", ME_UID)));
+  resultsById = {}; snap.docs.forEach(d => { resultsById[d.id] = d.data(); });
+}
 async function loadDashboard() {
+  if (STAFF) {
+    await loadStaffResults();
+    const snap = await getDocs(sessQ(where("status", "==", "completed")));
+    allSessions = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(s => s.bankVersion === BANK_VERSION);
+    renderSummary(); renderSessionsTable(); await loadGroups();
+    return;
+  }
   await checkAnswerKey();
   const q = query(collection(db, "sessions"), where("status", "==", "completed"));
   const snap = await getDocs(q);
@@ -392,8 +430,14 @@ function parseRoster(text) {
 }
 
 async function loadGroups() {
-  const [gSnap, pSnap, sSnap] = await Promise.all([getDocs(collection(db, "exam_groups")), getDocs(collection(db, "participants")), getDocs(collection(db, "group_secrets"))]);
-  const secrets = {}; sSnap.forEach(d => { secrets[d.id] = d.data().password; });
+  let gSnap, pSnap; const secrets = {};
+  if (STAFF) {
+    [gSnap, pSnap] = await Promise.all([getDocs(query(collection(db, "exam_groups"), where("createdBy", "==", ME_UID))), getDocs(query(collection(db, "participants"), where("ownerUid", "==", ME_UID)))]);
+    await Promise.all(gSnap.docs.map(async d => { try { const x = await getDoc(doc(db, "group_secrets", d.id)); if (x.exists()) secrets[d.id] = x.data().password; } catch (e) { console.warn(e); } }));
+  } else {
+    let sSnap; [gSnap, pSnap, sSnap] = await Promise.all([getDocs(collection(db, "exam_groups")), getDocs(collection(db, "participants")), getDocs(collection(db, "group_secrets"))]);
+    sSnap.forEach(d => { secrets[d.id] = d.data().password; });
+  }
   groupsCache = gSnap.docs.map(d => ({ id: d.id, password: secrets[d.id], ...d.data() })).sort((a, b) => tsMs(b.opensAt) - tsMs(a.opensAt));
   partsCache = pSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   renderGroups();
@@ -415,7 +459,7 @@ function renderGroups() {
       <td style="font-size:12.5px;">${fmtDT(tsMs(g.opensAt))}<br>→ ${fmtDT(tsMs(g.closesAt))}</td>
       <td>${st.label}</td>
       <td class="mono">${mine.length}</td>
-      <td class="mailcell" data-g="${g.id}" style="font-size:.85rem;"></td>
+      <td class="mailcell admin-only" data-g="${g.id}" style="font-size:.85rem;"></td>
       <td><button class="btn-secondary" data-manage="${g.id}" style="padding:6px 14px;">Gestionar</button></td>`;
     tb.appendChild(tr);
   }
@@ -435,7 +479,7 @@ function renderDetail() {
   box.innerHTML = `
     <h3 style="margin-top:0;">${esc(g.name)} · ${groupState(g).label}</h3>
     <p class="muted">Contraseña: <span class="mono"><b>${esc(g.password || "—")}</b></span></p>
-    <div id="dMailBox" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 16px; padding:10px 14px; border:1.5px solid var(--line); border-radius:10px;"></div>
+    <div id="dMailBox" class="admin-only" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 16px; padding:10px 14px; border:1.5px solid var(--line); border-radius:10px;"></div>
     <div class="form-grid">
       <div><label>Abre</label><input type="datetime-local" id="dOpens" value="${toLocalInput(tsMs(g.opensAt))}"></div>
       <div><label>Cierra</label><input type="datetime-local" id="dCloses" value="${toLocalInput(tsMs(g.closesAt))}"></div>
@@ -464,13 +508,18 @@ function renderDetail() {
     <h4 style="margin-top:24px;">Estudiantes (${mine.length})</h4>
     <p class="muted">Si a alguien se le va la luz o el internet y su examen se cierra: <strong>↻ Language Use / Reading / Listening</strong>: repite SOLO esa prueba, con preguntas nuevas al azar y reloj completo; las demás pruebas se conservan. Si el estudiante ya había terminado, solo repite esa prueba y su resultado se recalcula al terminar. <strong>▶ continuar</strong>: sigue donde iba con los minutos que tú le fijes (para cortes que no fueron su culpa). <strong>↺ examen nuevo</strong>: descarta todo y empieza un examen nuevo. Todo sirve en el mismo u otro equipo. <strong>quitar</strong>: lo saca de la lista.</p>
     <table class="admin-table">
-      <thead><tr><th>Nombre</th><th>Cédula</th><th>Correo</th><th>Nivel</th><th>Estado</th><th>Resultado por correo</th><th></th></tr></thead>
+      <thead><tr><th>Nombre</th><th>Cédula</th><th>Correo</th><th>Nivel</th><th>Estado</th><th class="admin-only">Resultado por correo</th><th></th></tr></thead>
       <tbody>${mine.map(p => `<tr><td>${esc(p.name)}</td><td class="mono">${esc(p.cedula)}</td><td style="font-size:.85rem;">${esc(p.email || "—")} <span class="toggle-detail" onclick="fixEmail('${p.id}')" title="Corregir el correo">✏ corregir</span></td><td>${esc(p.nivel || "—")}</td><td>${labels[p.status] || p.status}</td>
-        <td class="pmail" data-p="${p.id}" style="font-size:.85rem;"></td>
+        <td class="pmail admin-only" data-p="${p.id}" style="font-size:.85rem;"></td>
         <td>${p.status !== "not_started" ? `<div style="margin-bottom:3px;">${sectButtons(p.id)}</div>` : ""}${["in_progress", "closed"].includes(p.status) ? `<span class="toggle-detail" data-resume="${p.id}" style="margin-right:10px;">▶ continuar</span>` : ""}${p.status !== "not_started" ? `<span class="toggle-detail" data-restart="${p.id}" style="margin-right:10px;">↺ examen nuevo</span>` : ""}<span class="toggle-detail" data-delpart="${p.id}" style="color:var(--bad);">quitar</span></td></tr>`).join("")}</tbody>
     </table>`;
 
   refreshMailUI();
+  if (STAFF && staffLocked(g.id)) {                // sesión ya pasada: solo lectura
+    box.querySelectorAll("button, input, select, textarea").forEach(el => { el.disabled = true; });
+    box.querySelectorAll(".toggle-detail").forEach(el => { el.style.display = "none"; });
+    box.insertAdjacentHTML("afterbegin", `<div class="muted" style="margin-bottom:12px; padding:10px 14px; background:var(--gold-soft); border-radius:8px;">🔒 Esta sesión ya pasó (más de 1 día desde su cierre): solo se puede consultar.</div>`);
+  }
   const msg = (t) => { document.getElementById("dMsg").textContent = t; };
   document.getElementById("dSave").onclick = async () => {
     const o = new Date(document.getElementById("dOpens").value).getTime(), c = new Date(document.getElementById("dCloses").value).getTime();
@@ -490,7 +539,8 @@ function renderDetail() {
   document.getElementById("dDelete").onclick = async () => {
     if (!confirm("¿Borrar esta sesión y su lista de estudiantes? Los resultados ya guardados no se borran.")) return;
     for (const p of mine) await deleteDoc(doc(db, "participants", p.id));
-    await deleteDoc(doc(db, "exam_groups", g.id)); try { await deleteDoc(doc(db, "group_secrets", g.id)); } catch (e) {}
+    try { await deleteDoc(doc(db, "group_secrets", g.id)); } catch (e) { console.warn(e); }
+    await deleteDoc(doc(db, "exam_groups", g.id));
     selectedGroupId = null; await loadGroups();
   };
   document.getElementById("dAdd").onclick = async () => {
@@ -525,14 +575,22 @@ function renderDetail() {
 
 // ---------- reabrir / reiniciar a UN estudiante ----------
 async function latestAttempt(pid) {
-  const ss = await getDocs(query(collection(db, "sessions"), where("participantId", "==", pid)));
+  const ss = await getDocs(sessQ(where("participantId", "==", pid)));
   const list = ss.docs.map(d => ({ id: d.id, ...d.data() })).filter(x => x.status !== "abandoned");
   list.sort((a, b) => (b.startedAt?.seconds || 0) - (a.startedAt?.seconds || 0));
   return list[0];
 }
 
 // ▶ Reabrir: el estudiante continúa donde iba (en cualquier equipo). La administradora fija los minutos que le quedan.
+const staffBlocked = (pid, completedToo) => {
+  if (!STAFF) return false;
+  const p = partsCache.find(x => x.id === pid);
+  if (!p || staffLocked(p.groupId)) { alert("Esta sesión ya pasó (más de 1 día desde su cierre): solo se puede consultar. Para cambios, escribe a la coordinación."); return true; }
+  if (completedToo && (latestSessions.find(x => x.participantId === pid && x.status === "completed"))) { alert("Este estudiante ya terminó. Para repetirle una prueba, escribe a la coordinación (el resultado se recalcula desde su panel)."); return true; }
+  return false;
+};
 async function resumeParticipant(pid) {
+  if (staffBlocked(pid)) return;
   const p = partsCache.find(x => x.id === pid);
   const s = await latestAttempt(pid);
   if (!s || s.status === "completed") { alert("No hay un intento en curso para continuar. Si quieres darle un examen nuevo usa «↺ reiniciar»."); return; }
@@ -572,6 +630,7 @@ async function resumeParticipant(pid) {
 //  · Si sigue en curso, repite esa prueba y después continúa con las siguientes (con reloj nuevo).
 const SECTION_ORDER = ["UoL", "Reading", "Listening"];
 async function restartSectionOf(pid, forcedIdx) {
+  if (staffBlocked(pid, true)) return;
   const p = partsCache.find(x => x.id === pid);
   const s = await latestAttempt(pid);
   if (!s) { alert("Este estudiante no tiene un intento. Si quieres darle un examen nuevo usa «↺ examen nuevo»."); return; }
@@ -653,16 +712,17 @@ function covChips(cov) {
 
 // ↺ Reiniciar: se descarta el intento y empieza un examen nuevo
 async function restartParticipant(pid) {
+  if (staffBlocked(pid)) return;
   const p = partsCache.find(x => x.id === pid);
   if (!confirm(`¿Reiniciar a ${p?.name || "este estudiante"}? Su intento actual queda descartado y empezará un examen NUEVO (con otras preguntas).`)) return;
-  const ss = await getDocs(query(collection(db, "sessions"), where("participantId", "==", pid)));
+  const ss = await getDocs(sessQ(where("participantId", "==", pid)));
   for (const d of ss.docs) { const st = d.data().status; if (st === "in_progress" || st === "closed") await updateDoc(doc(db, "sessions", d.id), { status: "abandoned" }); }
   await updateDoc(doc(db, "participants", pid), { status: "not_started", resume: null, resumeConsumed: null });
   await loadGroups();
 }
 window.resumeParticipant = resumeParticipant; window.restartParticipant = restartParticipant; window.restartSectionOf = restartSectionOf;
 
-const newParticipant = (g, r) => ({ cedula: r.cedula, name: r.name, nombres: r.nombres || "", apellidos: r.apellidos || "", email: r.email || "", nivel: r.nivel || "", groupId: g.id, groupName: g.name, institution: g.institution, status: "not_started", createdAt: serverTimestamp() });
+const newParticipant = (g, r) => ({ cedula: r.cedula, name: r.name, nombres: r.nombres || "", apellidos: r.apellidos || "", email: r.email || "", nivel: r.nivel || "", groupId: g.id, groupName: g.name, institution: g.institution, status: "not_started", createdAt: serverTimestamp(), ...(STAFF ? { ownerUid: ME_UID } : {}) });
 
 const grpInst = document.getElementById("grpInstitution");
 for (const slug of Object.keys(INSTITUTIONS)) { const o = document.createElement("option"); o.value = slug; o.textContent = INSTITUTIONS[slug].name; grpInst.appendChild(o); }
@@ -686,7 +746,7 @@ document.getElementById("createGroupBtn").addEventListener("click", async () => 
   if ((await getDoc(doc(db, "exam_groups", id))).exists()) { msg.textContent = "Ya existe una sesión con exactamente esa contraseña. Usa otra."; return; }
   const btn = document.getElementById("createGroupBtn"); btn.disabled = true;
   const g = { id, name, institution: grpInst.value };
-  await setDoc(doc(db, "exam_groups", id), { name, institution: g.institution, enabled: true, opensAt: Timestamp.fromMillis(o), closesAt: Timestamp.fromMillis(c), createdAt: serverTimestamp() });
+  await setDoc(doc(db, "exam_groups", id), { name, institution: g.institution, enabled: true, opensAt: Timestamp.fromMillis(o), closesAt: Timestamp.fromMillis(c), createdAt: serverTimestamp(), ...(STAFF ? { createdBy: ME_UID } : {}) });
   await setDoc(doc(db, "group_secrets", id), { password });
   let n = 0;
   for (const r of rows) { await setDoc(doc(db, "participants", participantIdOf(id, r.cedula)), newParticipant(g, r)); btn.textContent = `Cargando estudiantes… ${++n}/${rows.length}`; }
@@ -698,7 +758,7 @@ document.getElementById("createGroupBtn").addEventListener("click", async () => 
 
 function renderSummary() {
   const n = allSessions.length;
-  const scores = allSessions.map(s => computedById[s.id]?.finalScore).filter(x => x !== undefined);
+  const scores = allSessions.map(s => (STAFF ? resultsById[s.id] : computedById[s.id])?.finalScore).filter(x => x !== undefined);
   const avg = scores.length > 0 ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1) : "—";
   document.getElementById("summaryRow").innerHTML = `
     <div class="stat-pill"><div class="n mono">${n}</div><div class="l">Sesiones completadas</div></div>
@@ -725,14 +785,23 @@ function eventBadges(events) {
 }
 
 // ---------------- EN VIVO ----------------
+function refreshStaffResults() {
+  allSessions = latestSessions.filter(s => s.status === "completed" && s.bankVersion === BANK_VERSION);
+  renderSummary(); renderSessionsTable();
+}
 function startLiveListener() {
-  onSnapshot(collection(db, "sessions"), (snap) => {
+  if (STAFF) onSnapshot(query(collection(db, "results"), where("ownerUid", "==", ME_UID)), (snap) => {
+    resultsById = {}; snap.docs.forEach(d => { resultsById[d.id] = d.data(); });
+    renderBoard(); refreshStaffResults();
+  }, e => console.warn(e));
+  onSnapshot(sessQ(), (snap) => {
     latestSessions = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     publishPending();
     renderBoard();
     refreshMailUI();
+    if (STAFF) refreshStaffResults();
   });
-  onSnapshot(collection(db, "participants"), (snap) => {
+  onSnapshot(STAFF ? query(collection(db, "participants"), where("ownerUid", "==", ME_UID)) : collection(db, "participants"), (snap) => {
     partsCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     renderBoard();
     if (document.getElementById("groupDetail").style.display !== "none") renderDetail();
@@ -777,6 +846,7 @@ function eligibleMails(parts, byPart) {
     && s.resultDelivery?.status === "published" && s.emailDelivery?.status !== "sent" && MAIL_OK_RE.test(emailOf(s, p)));
 }
 function mailLine(s, p) {
+  if (STAFF) return "";
   if (!s || s.resultDelivery?.status !== "published") return "";
   const sent = s.emailDelivery?.status === "sent";
   if (!MAIL_OK_RE.test(emailOf(s, p))) return `<div class="sub" style="color:var(--bad);">✉ sin correo válido</div>`;
@@ -786,6 +856,7 @@ function mailLine(s, p) {
 // Se guarda en su ficha de participante y, si ya tiene intento, también en el intento.
 const latestSessOf = (pid) => latestSessions.filter(x => x.participantId === pid && x.status !== "abandoned").sort((a, b) => (b.startedAt?.seconds || 0) - (a.startedAt?.seconds || 0))[0];
 window.fixEmail = async (pid) => {
+  if (staffBlocked(pid)) return;
   const p = partsCache.find(x => x.id === pid); if (!p) { alert("No encontré al estudiante. Recarga el panel."); return; }
   const s = latestSessOf(pid);
   const cur = emailOf(s, p);
@@ -972,12 +1043,12 @@ function renderBoard() {
   document.getElementById("colDone").innerHTML = cols.completed.map(p => {
     const s = byPart[p.id];
     let res = "";
-    if (s && answerKey) { try { const r = computeSessionResults(s, answerKey); res = ` · <b>${r.level}</b> · ${r.finalScore}`; } catch (e) {} }
+    { const r = resultOf(s); if (r) res = ` · <b>${r.level}</b> · ${r.finalScore}`; }
     const pub = s?.resultDelivery?.status === "published" ? "" : (s ? " · ⏳ sin publicar" : "");
     const cov = skillCoverage(s);
     let pcts = "";
-    if (s && answerKey) { try { const r = computeSessionResults(s, answerKey); pcts = `<div class="sub" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">${["UoL", "Reading", "Listening"].map(k => { const v = Math.round(r.pct[k]); const c = cov && cov.find(x => x.name === k); const zero = v === 0 || (c && c.answered === 0); return `<span style="padding:1px 7px; border-radius:8px; border:1.5px solid ${zero ? "var(--bad)" : "var(--line)"}; ${zero ? "color:var(--bad); font-weight:800;" : ""}">${{ UoL: "LU", Reading: "Reading", Listening: "Listening" }[k]} ${v}%</span>`; }).join("")}</div>`; } catch (e) {} }
-    return `<div class="board-card"><b>${esc(p.name)}</b>${sev(s?.suspiciousEvents)}<div class="sub mono">${esc(p.cedula)}${res}${pub}</div>${pcts}<div style="margin-top:6px;">${sectButtons(p.id, cov)}</div>${mailLine(s, p)}${emailFixLine(p, s)}</div>`;
+    { const r = resultOf(s); if (r) { try { pcts = `<div class="sub" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:4px;">${["UoL", "Reading", "Listening"].map(k => { const v = Math.round(r.pct[k]); const c = cov && cov.find(x => x.name === k); const zero = v === 0 || (c && c.answered === 0); return `<span style="padding:1px 7px; border-radius:8px; border:1.5px solid ${zero ? "var(--bad)" : "var(--line)"}; ${zero ? "color:var(--bad); font-weight:800;" : ""}">${{ UoL: "LU", Reading: "Reading", Listening: "Listening" }[k]} ${v}%</span>`; }).join("")}</div>`; } catch (e) {} } }
+    return `<div class="board-card"><b>${esc(p.name)}</b>${sev(s?.suspiciousEvents)}<div class="sub mono">${esc(p.cedula)}${res}${pub}</div>${pcts}${STAFF ? "" : `<div style="margin-top:6px;">${sectButtons(p.id, cov)}</div>`}${mailLine(s, p)}${emailFixLine(p, s)}</div>`;
   }).join("") || `<div class="muted">—</div>`;
   document.getElementById("cntNot").textContent = cols.not_started.length;
   document.getElementById("cntProg").textContent = cols.in_progress.length;
@@ -1161,11 +1232,11 @@ function renderSessionsTable() {
   const tbody = document.getElementById("sessionsBody");
   tbody.innerHTML = "";
   for (const s of allSessions) {
-    const r = computedById[s.id];
+    const r = STAFF ? (resultsById[s.id] ? { level: resultsById[s.id].level, finalScore: resultsById[s.id].finalScore, pct: resultsById[s.id].pct } : null) : computedById[s.id];
     const events = s.suspiciousEvents || [];
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><span class="toggle-detail" data-session="${s.id}">ver</span></td>
+      <td>${STAFF ? "" : `<span class="toggle-detail" data-session="${s.id}">ver</span>`}</td>
       <td>${esc(s.name || "—")}<div class="muted" style="font-size:.8rem;">${esc(s.profile?.email || "")}${s.profile?.nivel ? " · req. " + esc(s.profile.nivel) : ""}</div></td>
       <td class="mono">${s.username || "—"}</td>
       <td>${r ? skillPctCell(r.pct.UoL, "UoL") : "—"}</td>
@@ -1173,10 +1244,11 @@ function renderSessionsTable() {
       <td>${r ? skillPctCell(r.pct.Listening, "Listening") : "—"}</td>
       <td><strong>${r ? r.finalScore + "%" : "—"}</strong></td>
       <td>${r ? r.level : "—"}</td>
-      <td>${alertsCell(r, events)}</td>
+      <td>${alertsCell(STAFF ? null : r, events)}</td>
       <td>${eventsCell(events)}</td>
     `;
     tbody.appendChild(tr);
+    if (STAFF) continue;                          // el detalle por pregunta no se muestra a usuarios de sede
 
     const detailTr = document.createElement("tr");
     detailTr.className = "item-detail-row";
@@ -1314,6 +1386,7 @@ document.getElementById("exportStudentsBtn").addEventListener("click", () => {
     const prof = sess?.profile || {};
     let r = null;
     if (sess && sess.status === "completed" && answerKey && sess.bankVersion === BANK_VERSION) { r = computedById[sess.id] || null; if (!r) { try { r = computeSessionResults(sess, answerKey); } catch (e) {} } }
+    else if (STAFF && sess && sess.status === "completed" && sess.bankVersion === BANK_VERSION) r = resultOf(sess);
     const req = prof.nivel || p.nivel || "";
     const meets = r && req ? (order[r.level] >= order[req] ? "SI" : "NO") : "";
     const st = sess ? (sess.status === "completed" ? "completed" : p.status === "closed" || sess.status === "closed" ? "closed" : sess.status) : p.status;
