@@ -102,6 +102,7 @@ const ctx = {
   name: sessionStorage.getItem("participantName") || "",
   groupId: sessionStorage.getItem("groupId") || "",
   groupName: sessionStorage.getItem("groupName") || "",
+  ownerUid: sessionStorage.getItem("ownerUid") || "",
   institution: sessionStorage.getItem("institution") || "tweetalig",
   profile: (() => { try { return JSON.parse(sessionStorage.getItem("profile") || "{}"); } catch (e) { return {}; } })(),
   resume: (() => { try { return JSON.parse(sessionStorage.getItem("resume") || "null"); } catch (e) { return null; } })()

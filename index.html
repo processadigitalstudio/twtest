@@ -88,6 +88,7 @@
       sessionStorage.setItem("participantName", r.name);
       sessionStorage.setItem("groupId", r.groupId);
       sessionStorage.setItem("groupName", r.groupName);
+      sessionStorage.setItem("ownerUid", r.ownerUid || "");
       sessionStorage.setItem("institution", r.institution || "tweetalig");
       sessionStorage.setItem("profile", JSON.stringify(r.profile || {}));
       if (r.resume) sessionStorage.setItem("resume", JSON.stringify(r.resume)); else sessionStorage.removeItem("resume");
